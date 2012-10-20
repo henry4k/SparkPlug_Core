@@ -1,0 +1,90 @@
+#define __STDC_LIMIT_MACROS
+#include <stdint.h>
+
+static const int MtStateSize = 624;
+static const int RecurrenceOffset = 397;
+static const uint32_t MatrixA = 0x9908b0df;
+static const uint32_t UpperMask = 0x80000000; // Most significant w-r bits
+static const uint32_t LowerMask = 0x7fffffff; // Least significant r bits
+
+struct MT
+{
+	uint32_t state[MtStateSize];
+	int i;
+};
+
+void InitMT( MT* mt, int seed )
+{
+	uint32_t* p = mt->state;
+	p[0] = seed;
+	for(int i = 1; i < MtStateSize-1; ++i)
+	{
+		p[i] = 0x6c078965 * (p[i-1] ^ (p[i-1] >> 30)) + i;
+	}
+	
+	mt->i = 0;
+}
+
+int ExtractNumber( MT* mt )
+{
+	uint32_t r = mt->state[mt->i];
+	r ^=  (r >> 11);
+	r ^= ((r <<  7) & 0x9d2c5680);
+	r ^= ((r << 15) & 0xefc60000);
+	r ^=  (r >> 18);
+	mt->i %= MtStateSize;
+	return r;
+}
+
+void GenerateNumbers( MT* mt )
+{
+	uint32_t* p = mt->state;
+	for(int i = 0; i < MtStateSize-1; ++i)
+	{
+		uint32_t r = p[i] + 
+	}
+}
+ 
+ // Create a length 624 array to store the state of the generator
+ int[0..623] MT
+ int index = 0
+ 
+ // Initialize the generator from a seed
+ function initialize_generator(int seed)
+ {
+     MT[0] := seed
+     for i from 1 to 623 { // loop over each other element
+         MT[i] := last 32 bits of(1812433253 * (MT[i-1] xor (right shift by 30 bits(MT[i-1]))) + i) // 0x6c078965
+     }
+ }
+ 
+ // Extract a tempered pseudorandom number based on the index-th value,
+ // calling generate_numbers() every 624 numbers
+ function extract_number()
+ {
+     if index == 0
+     {
+         generate_numbers()
+     }
+ 
+     int y := MT[index]
+     y := y xor (right shift by 11 bits(y))
+     y := y xor (left shift by 7 bits(y) and (2636928640)) // 0x9d2c5680
+     y := y xor (left shift by 15 bits(y) and (4022730752)) // 0xefc60000
+     y := y xor (right shift by 18 bits(y))
+
+     index := (index + 1) mod 624
+     return y
+ }
+ 
+ // Generate an array of 624 untempered numbers
+ function generate_numbers()
+ {
+     for i from 0 to 623 {
+         int y := 32nd bit of(MT[i]) + last 31 bits of(MT[(i+1) mod 624])
+         MT[i] := MT[(i + 397) mod 624] xor (right shift by 1 bit(y))
+         if (y mod 2) != 0 { // y is odd
+             MT[i] := MT[i] xor (2567483615) // 0x9908b0df
+         }
+     }
+ }
