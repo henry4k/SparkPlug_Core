@@ -1,4 +1,4 @@
-AddModule(${ModulePrefix}common)
+AddModule(${ModulePrefix}Common)
 
 IF(UNIX AND NOT APPLE)
 	INCLUDE(CheckFunctionExists)
@@ -9,7 +9,7 @@ IF(UNIX AND NOT APPLE)
 		CHECK_FUNCTION_EXISTS("clock_gettime" RT_HAS_CLOCK_GETTIME)
 		UNSET(CMAKE_REQUIRED_LIBRARIES)
 		IF(RT_HAS_CLOCK_GETTIME)
-			TARGET_LINK_LIBRARIES(${ModulePrefix}common "rt")
+			TARGET_LINK_LIBRARIES(${ModulePrefix}Common "rt")
 			SET(HAVE_CLOCK_GETTIME 1)
 		ELSE()
 			MESSAGE(WARNING "Can't find clock_gettime! Please report this case the developers!")
@@ -18,12 +18,12 @@ IF(UNIX AND NOT APPLE)
 ENDIF()
 
 IF(WIN32)
-	TARGET_LINK_LIBRARIES(${ModulePrefix}common "winmm") # "comctl32" "user32" "ole32")
+	TARGET_LINK_LIBRARIES(${ModulePrefix}Common "winmm") # "comctl32" "user32" "ole32")
 	# ^- ??!
 # ELSEIF(APPLE)
 # 	SET(ClientFrameworks "Cocoa")
 ENDIF()
 
-InstallModule(${ModulePrefix}common)
+InstallModule(${ModulePrefix}Common)
 
-ADD_SUBDIRECTORY("gl")
+ADD_SUBDIRECTORY("GL")
