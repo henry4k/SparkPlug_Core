@@ -2,15 +2,20 @@
 
 // This should also work on BSD systems, since it relies on kqueue
 
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <sys/event.h>
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <dirent.h>
-#include <string.h>
+
+
+
+namespace SparkPlug
+{
 
 #define MAX_CHANGE_EVENT_SIZE 2000
 typedef struct kevent KEvent;
@@ -66,7 +71,7 @@ public:
 		int fd = open(name.c_str(), O_RDONLY);
 		
 		if(fd == -1)
-			LogFatalError() << "Invalid directory " << name << endl;
+			FatalError("Invalid directory: %s", name.c_str());
 		
 		++changeListCount;
 		
@@ -97,7 +102,7 @@ public:
 		target.udata = &tempEntry;
 		KEvent* ke = (KEvent*)bsearch(&target, &changeList, changeListCount + 1, sizeof(KEvent), comparator);
 		if(!ke)
-			LogFatalError() << "Invalid directory " << name << endl;
+			FatalError("Invalid directory %s", name.c_str());
 		
 		tempEntry.filename = 0;
 		
@@ -200,13 +205,13 @@ public:
 		// scan directory and call addFile(name, false) on each file
 		DIR* dir = opendir(path.c_str());
 		if(!dir)
-			LogFatalError() << "Invalid directory " << path << endl;
+			FatalError("Invalid directory: %s", path.c_str());
 		
 		struct dirent* entry;
 		struct stat attrib;
 		while((entry = readdir(dir)) != NULL)
 		{
-			string fname = (path + "/" + string(entry->d_name));
+			String fname = (path + "/" + String(entry->d_name));
 			stat(fname.c_str(), &attrib);
 			if(S_ISREG(attrib.st_mode))
 				addFile(fname, false);
@@ -240,7 +245,8 @@ public:
 	int m_Descriptor;
 	struct timespec m_TimeOut;
 	int m_LastWatchId;
-	map<FsWatch, FsWatchImpl> m_Watches;
+	std::map<int, FsWatchImpl*> m_Watches;
+	FsMonitor* m_Monitor;
 	
 	FsMonitorImpl( FsMonitor* monitor )
 	{
@@ -258,14 +264,14 @@ public:
 	
 	FsWatch* add( const std::string& path )
 	{
-		FsWatchImpl watch(++mLastWatchId, path);
-		m_Watches[mLastWatchId] = watch;
-		return &m_Watches[mLastWatchId];
+		FsWatchImpl* watch = new FsWatchImpl(++m_LastWatchId, path, m_Monitor);
+		m_Watches[m_LastWatchId] = watch;
+		return watch;
 	}
 	
 	void remove( int watch )
 	{
-		map<int, FsWatchImpl>::iterator i = m_Watches.find( watch );
+		std::map<int, FsWatchImpl*>::iterator i = m_Watches.find( watch );
 		if(i == m_Watches.end())
 			return;
 		delete i->second;
@@ -274,8 +280,7 @@ public:
 	
 	void remove( const std::string& path )
 	{
-		string systemPath = path.toSystemPath();
-		map<FsWatch, FsWatchImpl*>::iterator i = m_Watches.begin();
+		std::map<int, FsWatchImpl*>::iterator i = m_Watches.begin();
 		for(; i != m_Watches.end(); i++)
 		{
 			if(path == i->second->path)
@@ -291,15 +296,14 @@ public:
 		int nev = 0;
 		struct kevent event;
 		
-		map<FsWatch, FsWatchImpl>::iterator i = m_Watches.begin();
+		std::map<int, FsWatchImpl*>::iterator i = m_Watches.begin();
 		for(; i != m_Watches.end(); i++)
 		{
-			FsWatchImpl* watch = &i->second;
+			FsWatchImpl* watch = i->second;
 			
-			while((nev = kevent(mDescriptor, (KEvent*)&(watch->changeList), watch->changeListCount + 1, &event, 1, &timeOut)) != 0)
+			while((nev = kevent(m_Descriptor, (KEvent*)&(watch->changeList), watch->changeListCount + 1, &event, 1, &m_TimeOut)) != 0)
 			{
-				if(nev == -1)
-					LogFatalError() << "kevent" << endl;
+				assert(nev != -1);
 				
 				EntryStruct* entry = 0;
 				if((entry = (EntryStruct*)event.udata) != 0)
@@ -315,7 +319,7 @@ public:
 						struct stat attrib;
 						stat(entry->filename, &attrib);
 						entry->modifiedTime = attrib.st_mtime;
-						watch->handleEvent(entry->mFilename, FsEvent::Modified);
+						watch->handleEvent(entry->filename, FsEvent::Modified);
 					}
 				}
 				else
@@ -326,4 +330,6 @@ public:
 		}
 	}
 };
+
+}
 

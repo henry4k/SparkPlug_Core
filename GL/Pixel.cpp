@@ -1,9 +1,12 @@
 #include <SparkPlug/Common.h>
-#include <SparkPlug/gl/OpenGL.h>
-#include <SparkPlug/gl/Pixel.h>
+#include <SparkPlug/GL/OpenGL.h>
+#include <SparkPlug/GL/Pixel.h>
 
 namespace SparkPlug
 {
+namespace GL
+{
+
 GLenum ConvertToGL( PixelComponent component )
 {
 	switch(component)
@@ -210,5 +213,7 @@ GLenum ConvertToGL( const PixelFormat& format, bool sRGB )
 	
 	FatalError("Pixel format '%s' not supported!", format.asString().c_str());
 	return 0;
+}
+
 }
 }

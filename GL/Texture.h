@@ -2,7 +2,9 @@
 #define __SPARKPLUG_TEXTURE__ 
 
 #include <SparkPlug/Vector.h>
-#include <SparkPlug/gl/OpenGL.h>
+#include <SparkPlug/Reference.h>
+#include <SparkPlug/GL/OpenGL.h>
+#include <SparkPlug/GL/Object.h>
 
 
 
@@ -13,13 +15,17 @@ namespace SparkPlug
 class Image;
 class PixelFormat;
 
+namespace GL
+{
+
 enum TextureType
 {
 	TextureType_1D,
 	TextureType_2D,
 	TextureType_3D,
 	TextureType_Rect,
-	TextureType_CubeMap
+	TextureType_CubeMap,
+	TextureType_Count
 };
 const char* AsString( TextureType type );
 GLenum ConvertToGL( TextureType type );
@@ -29,7 +35,8 @@ enum TextureFilter
 {
 	TextureFilter_Nearest,
 	TextureFilter_Bilinear,
-	TextureFilter_Trilinear
+	TextureFilter_Trilinear,
+	TextureFilter_Count
 };
 const char* AsString( TextureFilter filter );
 GLint ConvertToGL( TextureFilter filter, bool usingMipMaps );
@@ -37,7 +44,8 @@ GLint ConvertToGL( TextureFilter filter, bool usingMipMaps );
 enum TextureAddressMode
 {
 	TextureAddressMode_Repeat,
-	TextureAddressMode_Clamp
+	TextureAddressMode_Clamp,
+	TextureAddressMode_Count
 };
 const char* AsString( TextureAddressMode mode );
 GLenum ConvertToGL( TextureAddressMode mode );
@@ -55,9 +63,12 @@ enum TextureCubeFace
 // GLenum ConvertToGL( TextureCubeFace mode );
 
 
-class SamplerBase
+class SamplerBase : public Object
 {
 public:
+	SamplerBase( Context* context ) : Object(context) {}
+	virtual ~SamplerBase() {}
+
 	TextureFilter filter() const;
 	virtual void setFilter( TextureFilter filter );
 	
@@ -76,11 +87,9 @@ private:
 class Texture : public SamplerBase
 {
 public:
-	Texture( TextureType type, const Image& image, bool useMipMaps, bool sRGB );
-	~Texture();
-	
-	void bind( int textureUnit ) const;
-	static void Unbind( int textureUnit );
+	static StrongRef<Texture> Create( Context* context, TextureType type );
+	static StrongRef<Texture> CreateFromImage( Context* context, TextureType type, const Image& image );
+	virtual ~Texture();
 	
 	TextureType type() const;
 	bool is1D() const;
@@ -99,14 +108,16 @@ public:
 	void setMaxAnisotropic( float level );
 	
 private:
+	Texture( Context* context, TextureType type );
+// 	Texture( Context* context, TextureType type, const Image& image, bool useMipMaps, bool sRGB );
 	static bool TestTextureCreation( TextureType type, vec3i size, PixelFormat format, bool useSRGB );
 	
-	GLuint      m_Handle;
 	TextureType m_Type;
 	int         m_MipMapLevels;
 	vec3i       m_Size;
 };
 
+}
 }
 
 #endif

@@ -1,9 +1,12 @@
-#include <SparkPlug/gl/Sampler.h>
+#include <SparkPlug/GL/Sampler.h>
 
 namespace SparkPlug
 {
+namespace GL
+{
 
-Sampler::Sampler()
+Sampler::Sampler( Context* context ) :
+	SamplerBase(context)
 {
 	glGenSamplers(1, &m_Handle);
 }
@@ -47,4 +50,5 @@ void Sampler::setMaxAnisotropic( float level )
 	SamplerBase::setMaxAnisotropic(level);
 }
 
+}
 }

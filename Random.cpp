@@ -1,5 +1,5 @@
 #include <ctime>
-#include <SparkPlug/Random.h"
+#include <SparkPlug/Random.h>
 
 namespace SparkPlug
 {
@@ -7,9 +7,9 @@ namespace SparkPlug
 void InitRandom( unsigned int seed )
 {
 	if(!seed)
-		seed = (unsigned int)time(0);
+		seed = (unsigned int)std::time(0);
 
-	srand(seed);
+	std::srand(seed);
 }
 
 }

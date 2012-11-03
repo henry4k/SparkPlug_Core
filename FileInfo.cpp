@@ -1,4 +1,4 @@
-#include <string.h>
+#include <cstring>
 #include <SparkPlug/FileInfo.h>
 
 namespace SparkPlug
@@ -22,7 +22,7 @@ FileInfo::FileInfo( const Path& path, bool followSymbolicLinks )
 	}
 #endif
 	
-	memset(&m_Stat, 0, sizeof(m_Stat));
+	std::memset(&m_Stat, 0, sizeof(m_Stat));
 }
 
 time_t FileInfo::accessTime() const { return m_Stat.st_atime; }

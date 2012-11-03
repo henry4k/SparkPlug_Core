@@ -66,6 +66,7 @@ void ReferenceT<T>::setByReference( const Reference& ref )
 template< typename T >
 StrongRef<T>::StrongRef()
 {
+	
 }
 
 template< typename T >
@@ -73,6 +74,14 @@ StrongRef<T>::StrongRef( T* ptr )
 {
 	ReferenceT<T>::setByPointer(ptr);
 	this->Reference::m_RefCounter->addStrongRef();
+}
+
+template< typename T>
+StrongRef<T>::StrongRef( const ReferenceT<T>& ref )
+{
+	ReferenceT<T>::template setByReference<T>(ref);
+	if(this->Reference::m_RefCounter)
+		this->Reference::m_RefCounter->addStrongRef();
 }
 
 template< typename T>
@@ -115,6 +124,14 @@ StrongRef<T>& StrongRef<T>::operator=( const ReferenceT<T1>& ref )
 template< typename T >
 WeakRef<T>::WeakRef()
 {
+}
+
+template< typename T >
+WeakRef<T>::WeakRef( const ReferenceT<T>& ref )
+{
+	ReferenceT<T>::template setByReference<T>(ref);
+	if(this->Reference::m_RefCounter)
+		this->Reference::m_RefCounter->addListener(this);
 }
 
 template< typename T >

@@ -1,15 +1,14 @@
 #ifndef __SPARKPLUG_OPENGL__
 #define __SPARKPLUG_OPENGL__
 
-#if defined(__APPLE__)
-#	include <OpenGL/glext.h>
-#else
-#	include <GL/glew.h>
-#endif
+#include <GL/glew.h>
 
 namespace SparkPlug
 {
+namespace GL
+{
 	void CheckGl();
+}
 }
 
 #endif

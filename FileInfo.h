@@ -1,11 +1,10 @@
 #ifndef __SPARKPLUG_FILEINFO__
 #define __SPARKPLUG_FILEINFO__
 
-#include <time.h>
-#include <sys/types.h>
+#include <ctime>
 #include <sys/stat.h>
 
-#include <SparkPlug/Platform.h"
+#include <SparkPlug/Platform.h>
 #include <SparkPlug/Path.h>
 
 

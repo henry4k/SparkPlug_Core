@@ -11,15 +11,15 @@ void InitRandom( unsigned int seed = 0 );
 
 template <typename T> T Random( const T& max )
 {
-	return T(rand()) * max / T(RAND_MAX);
+	return T(std::rand()) * max / T(RAND_MAX);
 }
 
 template <typename T> T RandomX( const T& min, const T& max)
 {
 	if(min < max)
-		return T(rand()) * (max-min) / T(RAND_MAX) + min;
+		return T(std::rand()) * (max-min) / T(RAND_MAX) + min;
 	else
-		return T(rand()) * (min-max) / T(RAND_MAX) + max;
+		return T(std::rand()) * (min-max) / T(RAND_MAX) + max;
 }
 
 }

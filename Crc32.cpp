@@ -1,6 +1,6 @@
-#include <stdio.h>
-#include <string.h>
-#include <assert.h>
+#include <cstdio>
+#include <cstring>
+#include <cassert>
 #include <SparkPlug/Crc32.h>
 
 namespace SparkPlug
@@ -66,7 +66,7 @@ unsigned int Crc32Data(const void* buf, int len)
 
 unsigned int Crc32String( const char* str )
 {
-	return Crc32Data(str, strlen(str));
+	return Crc32Data(str, std::strlen(str));
 }
 
 
@@ -80,20 +80,21 @@ unsigned int Crc32File( const char* path )
 	unsigned int crc;
 	crc = Crc32(0L, 0, 0);
 
-	FILE* f = fopen(path, "rb");
+	std::FILE* f = std::fopen(path, "rb");
 	int gcount;
 	if(f == NULL)
 		return 0;
 
 	do
 	{
-		gcount = fread(buffer, 1, FileBufferSize, f);
+		gcount = std::fread(buffer, 1, FileBufferSize, f);
 		crc = Crc32(crc, buffer, gcount);
-	} while(feof(f));
+	} while(std::feof(f));
 	
-	fclose(f);
+	std::fclose(f);
 
 	return crc;
 }
+// TODO: Use new file io system
 
 }

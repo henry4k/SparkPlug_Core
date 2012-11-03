@@ -56,6 +56,7 @@ Image::Image( const Image& source ) :
 Image& Image::operator = ( const Image& source )
 {
 	assert(false);
+	return *this;
 }
 
 }

@@ -4,10 +4,12 @@
 #include <map>
 #include <string>
 
-#include <SparkPlug/gl/OpenGL.h>
-#include <SparkPlug/gl/Texture.h>
+#include <SparkPlug/GL/OpenGL.h>
+#include <SparkPlug/GL/Texture.h>
 
 namespace SparkPlug
+{
+namespace GL
 {
 
 class ShaderProgramm
@@ -49,6 +51,7 @@ class Shader
 		std::map<std::string, int> m_UniformLocations;
 };
 
+}
 }
 
 #endif

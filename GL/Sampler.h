@@ -1,16 +1,20 @@
 #ifndef __SPARKPLUG_SAMPLER__
 #define __SPARKPLUG_SAMPLER__
 
-#include <SparkPlug/gl/OpenGL.h>
-#include <SparkPlug/gl/Texture.h>
+#include <SparkPlug/GL/OpenGL.h>
+#include <SparkPlug/GL/Texture.h>
 
 namespace SparkPlug
 {
+namespace GL
+{
+
+class Context;
 
 class Sampler : public SamplerBase
 {
 public:
-	Sampler();
+	Sampler( Context* context );
 	~Sampler();
 	
 	void bind( int textureUnit ) const;
@@ -19,11 +23,9 @@ public:
 	void setFilter( TextureFilter filter );
 	void setAddressMode( TextureAddressMode mode );
 	void setMaxAnisotropic( float level );
-	
-private:
-	GLuint m_Handle;
 };
 
+}
 }
 
 #endif

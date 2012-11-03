@@ -17,8 +17,8 @@ namespace SparkPlug
 	};
 
 #else
-
-	#include <stddef.h>
+	#include <cstddef>
+// 	#include <stddef.h>
 	#include <dirent.h>
 	
 	struct DirData

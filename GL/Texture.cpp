@@ -1,11 +1,13 @@
 #include <SparkPlug/Common.h>
 #include <SparkPlug/Math.h>
 #include <SparkPlug/Pixel.h>
-#include <SparkPlug/gl/Pixel.h>
-#include <SparkPlug/gl/OpenGL.h>
-#include <SparkPlug/gl/Texture.h>
+#include <SparkPlug/GL/Pixel.h>
+#include <SparkPlug/GL/OpenGL.h>
+#include <SparkPlug/GL/Texture.h>
 
 namespace SparkPlug
+{
+namespace GL
 {
 
 const char* AsString( TextureType type )
@@ -50,6 +52,9 @@ GLenum ConvertToGL( TextureType type )
 		
 		case TextureType_CubeMap:
 			return GL_TEXTURE_CUBE_MAP;
+		
+		default:
+			;
 	}
 	
 	FatalError("Invalid texture type: %u", type);
@@ -74,6 +79,9 @@ GLenum ConvertToProxyGL( TextureType type )
 		
 		case TextureType_CubeMap:
 			return GL_PROXY_TEXTURE_CUBE_MAP;
+		
+		default:
+			;
 	}
 	
 	FatalError("Invalid texture type: %u", type);
@@ -119,6 +127,9 @@ GLint ConvertToGL( TextureFilter filter, bool usingMipMaps )
 				return GL_LINEAR_MIPMAP_LINEAR;
 			else
 				return GL_LINEAR;
+		
+		default:
+			;
 	}
 	
 	FatalError("Invalid texture filter: %u", filter);
@@ -149,6 +160,9 @@ GLenum ConvertToGL( TextureAddressMode mode )
 		
 		case TextureAddressMode_Clamp:
 			return GL_CLAMP_TO_EDGE;
+		
+		default:
+			;
 	}
 	
 	FatalError("Invalid texture address mode %u", mode);
@@ -178,6 +192,7 @@ GLenum ConvertToGL( TextureCubeFace face )
 			return GL_TEXTURE_CUBE_MAP_NEGATIVE_Z;
 		
 		case TextureCubeFace_None:
+		default:
 			;
 	}
 	
@@ -296,10 +311,16 @@ bool Texture::TestTextureCreation( TextureType type, vec3i size, PixelFormat for
 	return true;
 }
 
-Texture::Texture( TextureType type, const Image& image, bool useMipMaps, bool sRGB ) :
-	m_Type(type)
+StrongRef<Texture> Texture::Create( Context* context, TextureType type )
 {
-	glGenTextures(1, &m_Handle);
+	Texture* texture = new Texture(context, type);
+	return StrongRef<Texture>(texture);
+}
+
+StrongRef<Texture> Texture::CreateFromImage( Context* context, TextureType type, const Image& image )
+{
+	Texture* texture = new Texture(context, type);
+	
 // 	bind(0);
 // 	switch(type)
 // 	{
@@ -311,21 +332,20 @@ Texture::Texture( TextureType type, const Image& image, bool useMipMaps, bool sR
 // 			glTexImage2D(GL_TEXTURE_2D, 0, format, img->getSize().x, img->getSize().y, 0, format, img->getType(), img->getData());
 // 			break;
 // 	}
+	
+	return StrongRef<Texture>(texture);
+}
+
+Texture::Texture( Context* context, TextureType type ) :
+	SamplerBase(context),
+	m_Type(type)
+{
+	glGenTextures(1, &m_Handle);
 }
 
 Texture::~Texture()
 {
 	glDeleteTextures(1, &m_Handle);
-}
-
-void Texture::bind( int textureUnit ) const
-{
-// 	glBindTexture(ConvertToGL(m_Type), m_Handle);
-}
-
-void Texture::Unbind( int textureUnit )
-{
-// 	glBindTexture(ConvertToGL(m_Type), 0);
 }
 
 TextureType Texture::type() const
@@ -394,4 +414,5 @@ void Texture::setMaxAnisotropic( float level )
 	SamplerBase::setMaxAnisotropic(level);
 }
 
+}
 }

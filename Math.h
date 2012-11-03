@@ -19,13 +19,25 @@ const float Pi = M_PI;
 inline float Deg2Rad( float deg ) { return deg*Pi/180.f; }
 inline float Rad2Deg( float rad ) { return rad*180.f/Pi; }
 
-inline bool HighestBitValue( const uint x )
+inline uint HighestBit( const uint value )
 {
-	assert(x != 0);
-	uint bit = uint(-1);
-	for(uint tmp = x; tmp; tmp >>= 1, ++bit)
+	assert(value != 0);
+	uint bit = -1;
+	for(uint tmp = value; tmp; tmp >>= 1, ++bit)
 		;
 	return bit;
+}
+
+inline uint HighestBitValue( const uint value )
+{
+	uint tmp = value;
+	uint result = 0;
+	while(tmp)
+	{
+		result = (tmp & (~tmp + 1)); // grab lowest bit
+		tmp &= ~result; // clear lowest bit
+	}
+	return result;
 }
 
 inline bool IsPowerOfTwo( const uint x )

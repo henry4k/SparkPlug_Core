@@ -20,6 +20,8 @@ enum Enum
 class FsEventHandler
 {
 	public:
+		virtual ~FsEventHandler() {}
+
 		/**
 		 * Handles the file action
 		 * @param watchid The watch id for the directory
@@ -58,6 +60,7 @@ class FsMonitor // Singleton?
 	protected:
 		FsMonitorImpl* m_Impl;
 		friend class FsMonitorImpl;
+		friend class FsWatchImpl;
 		void onFsEvent( FsWatch* watch, const Path& path, int event );
 };
 

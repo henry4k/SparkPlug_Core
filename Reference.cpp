@@ -80,4 +80,10 @@ bool Reference::operator!() const
 	return !m_RefCounter || !m_RefCounter->getConstPointer();
 }
 
+std::ostream& operator<<( std::ostream& o, const Reference& v )
+{
+	o << v.m_RefCounter << std::endl;
+ 	return o;
+}
+
 }

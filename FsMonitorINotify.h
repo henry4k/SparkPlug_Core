@@ -1,11 +1,15 @@
 /// --- Linux ---
 
-#include <errno.h>
+#include <cstdio>
+#include <cerrno>
+#include <cstring>
 #include <sys/types.h>
-#include <string.h>
-#include <stdio.h>
 #include <sys/inotify.h>
 #define BUFF_SIZE ((sizeof(struct inotify_event)+FILENAME_MAX)*1024)
+
+
+namespace SparkPlug
+{
 
 class FsWatchImpl : public FsWatch
 {
@@ -19,7 +23,7 @@ public:
 	int m_FD;
 	struct timeval m_TimeOut;
 	fd_set m_DescriptorSet;
-	map<int, FsWatchImpl*> m_Watches;
+	std::map<int, FsWatchImpl*> m_Watches;
 	FsMonitor* m_Monitor;
 	
 	FsMonitorImpl( FsMonitor* monitor )
@@ -37,7 +41,7 @@ public:
 	
 	~FsMonitorImpl()
 	{
-		map<int, FsWatchImpl*>::const_iterator i = m_Watches.begin();
+		std::map<int, FsWatchImpl*>::const_iterator i = m_Watches.begin();
 		for(; i != m_Watches.end(); i++)
 			delete i->second;
 		m_Watches.clear();
@@ -49,7 +53,7 @@ public:
 		if(wd < 0)
 		{
 			if(errno == ENOENT)
-				LogError() << "Invalid path " << path << endl;
+				LogError("Invalid path %s", path.c_str());
 			assert(false);
 		}
 		
@@ -62,7 +66,7 @@ public:
 	
 	void remove( int watch )
 	{
-		map<int, FsWatchImpl*>::iterator i = m_Watches.find( watch );
+		std::map<int, FsWatchImpl*>::iterator i = m_Watches.find( watch );
 		if(i == m_Watches.end())
 			return;
 		
@@ -73,7 +77,7 @@ public:
 	
 	void remove( const std::string& path )
 	{
-		map<int, FsWatchImpl*>::iterator i = m_Watches.begin();
+		std::map<int, FsWatchImpl*>::iterator i = m_Watches.begin();
 		for(; i != m_Watches.end(); i++)
 		{
 			if(path == i->second->path)
@@ -97,8 +101,8 @@ public:
 			ssize_t len, i = 0;
 			char action[81+FILENAME_MAX];
 			char buff[BUFF_SIZE];
-			memset(action, 0, sizeof(action));
-			memset(buff, 0, sizeof(buff));
+			std::memset(action, 0, sizeof(action));
+			std::memset(buff, 0, sizeof(buff));
 			
 			len = read(m_FD, buff, BUFF_SIZE);
 			
@@ -113,8 +117,9 @@ public:
 		}
 	}
 	
-	void handleEvent( FsWatchImpl* watch, const string& path, unsigned long action )
+	void handleEvent( FsWatchImpl* watch, const std::string& path, unsigned long action )
 	{
+		
 		std::string p = Path(watch->path)/path;
 		
 		if(IN_CLOSE_WRITE & action)
@@ -128,4 +133,4 @@ public:
 	}
 };
 
-
+}

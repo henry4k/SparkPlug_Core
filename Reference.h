@@ -1,9 +1,9 @@
 #ifndef __SPARKPLUG_REFERENCE__
 #define __SPARKPLUG_REFERENCE__
 
-#include <stddef.h>
+#include <iostream>
+#include <cstddef>
 #include <set>
-
 
 namespace SparkPlug
 {
@@ -11,6 +11,8 @@ namespace SparkPlug
 class IReferenceListener
 {
 	public:
+		virtual ~IReferenceListener() {}
+
 		virtual void onZeroReferences( void* pointer ) = 0;
 };
 
@@ -82,6 +84,8 @@ class Reference
 		Reference();
 };
 
+std::ostream& operator<<( std::ostream& o, const Reference& v );
+
 
 template< typename T >
 class ReferenceT : public Reference
@@ -109,6 +113,8 @@ class StrongRef : public ReferenceT<T>
 		
 		explicit StrongRef( T* ptr );
 		
+		StrongRef( const ReferenceT<T>& ref );
+		
 		template< typename T1 >
 		StrongRef( const ReferenceT<T1>& ref );
 		
@@ -125,6 +131,8 @@ class WeakRef : public ReferenceT<T>, public IReferenceListener
 	public:
 		WeakRef();
 		
+		WeakRef( const ReferenceT<T>& ref );
+		
 		template< typename T1 >
 		WeakRef( const ReferenceT<T1>& ref );
 
@@ -138,7 +146,7 @@ class WeakRef : public ReferenceT<T>, public IReferenceListener
 };
 
 
-#include <SparkPlug/Reference_Impl.h"
+#include <SparkPlug/Reference_Impl.h>
 
 }
 #endif

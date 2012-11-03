@@ -6,8 +6,6 @@
 #include <SparkPlug/Directory.h>
 #include <SparkPlug/FsMonitor.h>
 
-using namespace std;
-
 
 namespace SparkPlug
 {
@@ -25,7 +23,7 @@ public:
 
 	virtual ~FsWatch()
 	{
-		vector<int>::const_iterator i = childs.begin();
+		std::vector<int>::const_iterator i = childs.begin();
 		for(; i != childs.end(); i++)
 			monitor->remove(*i);
 	}
@@ -38,6 +36,8 @@ public:
 	std::vector<int> childs;
 };
 
+}
+
 
 #if defined(__WIN32__)
 #	include <SparkPlug/FsMonitorWin32.h>
@@ -47,6 +47,9 @@ public:
 # 	include <SparkPlug/FsMonitorKQueue.h>
 #endif
 
+
+namespace SparkPlug
+{
 
 /// --- FsMonitor ---
 

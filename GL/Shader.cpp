@@ -2,11 +2,13 @@
 #include <string>
 #include <fstream>
 
-#include <SparkPlug/gl/OpenGL.h>
-#include <SparkPlug/gl/Shader.h>
+#include <SparkPlug/GL/OpenGL.h>
+#include <SparkPlug/GL/Shader.h>
 
 
 namespace SparkPlug
+{
+namespace GL
 {
 
 
@@ -240,4 +242,5 @@ void Shader::setUniform( const char* name, int length, const float* values ) con
 	}
 }
 
+}
 }
