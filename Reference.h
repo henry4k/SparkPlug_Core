@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cstddef>
 #include <set>
+#include <SparkPlug/Common.h>
 
 namespace SparkPlug
 {

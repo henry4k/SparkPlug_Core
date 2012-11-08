@@ -28,7 +28,7 @@ template< typename T >
 const T* ReferenceT<T>::getConst() const
 {
 	if(m_RefCounter)
-		return reinterpret_cast<T*>( reinterpret_cast<const char*>(m_RefCounter->getConstPointer())+m_PointerOffset);
+		return reinterpret_cast<const T*>( reinterpret_cast<const char*>(m_RefCounter->getConstPointer())+m_PointerOffset);
 	else
 		return NULL;
 }
@@ -57,7 +57,12 @@ template< typename T1 >
 void ReferenceT<T>::setByReference( const Reference& ref )
 {
 	m_RefCounter = ref.m_RefCounter;
-	m_PointerOffset = ref.m_PointerOffset+( sizeof(T)-sizeof(T1) );
+	const T1*  from = reinterpret_cast<const T1*>( reinterpret_cast<const char*>(ref.m_RefCounter->getConstPointer()) + ref.m_PointerOffset );
+	const T*   to   = static_cast<const T*>(from);
+	m_PointerOffset = ref.m_PointerOffset+( reinterpret_cast<const char*>(to) - reinterpret_cast<const char*>(from) );
+	if(m_PointerOffset != 0)
+		FatalError("WHAT THE FUCK?! PointerOffset != 0  :OOO!!1 O_O'");
+	// ref.m_PointerOffset+( sizeof(T)-sizeof(T1) );
 }
 
 
