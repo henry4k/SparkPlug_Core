@@ -27,3 +27,4 @@ ENDIF()
 InstallModule(${ModulePrefix}Common)
 
 ADD_SUBDIRECTORY("GL")
+ADD_SUBDIRECTORY("ImageIo")

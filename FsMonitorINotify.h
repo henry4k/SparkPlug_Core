@@ -4,6 +4,7 @@
 #include <cerrno>
 #include <cstring>
 #include <sys/types.h>
+#include <sys/unistd.h>
 #include <sys/inotify.h>
 #define BUFF_SIZE ((sizeof(struct inotify_event)+FILENAME_MAX)*1024)
 

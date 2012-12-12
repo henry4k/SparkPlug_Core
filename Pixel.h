@@ -48,7 +48,36 @@ public:
 	
 	int componentCount() const;
 	
-	String asString() const;
+	std::string asString() const;
+	
+	static const PixelFormat Invalid;
+	static const PixelFormat L8;
+	static const PixelFormat LA8;
+	static const PixelFormat RGB8;
+	static const PixelFormat RGBA8;
+	
+// 	static const PixelFormat L8;
+// 	static const PixelFormat L16;
+// 	static const PixelFormat L16F;
+// 	static const PixelFormat L32F;
+// 	static const PixelFormat LA8;
+// 	static const PixelFormat LA16;
+// 	static const PixelFormat LA16F;
+// 	static const PixelFormat LA32F;
+// 	static const PixelFormat RGB8;
+// 	static const PixelFormat RGB16;
+// 	static const PixelFormat RGB16F;
+// 	static const PixelFormat RGB32F;
+// 	static const PixelFormat RGBA8;
+// 	static const PixelFormat RGBA16;
+// 	static const PixelFormat RGBA16F;
+// 	static const PixelFormat RGBA32F;
+// 	static const PixelFormat DEPTH16;
+// 	static const PixelFormat DEPTH24;
+// 	static const PixelFormat DEPTH32;
+// 	static const PixelFormat DEPTH16F;
+// 	static const PixelFormat DEPTH32F;
+	
 	
 private:
 	PixelSemantic  m_Semantic;

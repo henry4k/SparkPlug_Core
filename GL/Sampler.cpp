@@ -16,36 +16,29 @@ Sampler::~Sampler()
 	glDeleteSamplers(1, &m_Handle);
 }
 
-void Sampler::bind( int textureUnit ) const
+void Sampler::setFilter( TextureFilter f )
 {
-	glBindSampler(textureUnit, m_Handle);
+	if(f == filter())
+		return;
+	glSamplerParameteri(m_Handle, GL_TEXTURE_MIN_FILTER, ConvertToGL(f, true));
+	glSamplerParameteri(m_Handle, GL_TEXTURE_MAG_FILTER, ConvertToGL(f, false));
+	SamplerBase::setFilter(f);
 }
 
-void Sampler::Unbind( int textureUnit )
+void Sampler::setAddressMode( TextureAddressMode m )
 {
-	glBindSampler(textureUnit, 0);
-}
-
-void Sampler::setFilter( TextureFilter filter )
-{
-// 	bind();
-	glSamplerParameteri(m_Handle, GL_TEXTURE_MIN_FILTER, ConvertToGL(filter, false));
-	glSamplerParameteri(m_Handle, GL_TEXTURE_MAG_FILTER, ConvertToGL(filter, false));
-	SamplerBase::setFilter(filter);
-}
-
-void Sampler::setAddressMode( TextureAddressMode mode )
-{
-// 	bind();
-	glSamplerParameteri(m_Handle, GL_TEXTURE_WRAP_S, ConvertToGL(mode));
-	glSamplerParameteri(m_Handle, GL_TEXTURE_WRAP_T, ConvertToGL(mode));
-	glSamplerParameteri(m_Handle, GL_TEXTURE_WRAP_R, ConvertToGL(mode));
-	SamplerBase::setAddressMode(mode);
+	if(m == addressMode())
+		return;
+	glSamplerParameteri(m_Handle, GL_TEXTURE_WRAP_S, ConvertToGL(m));
+	glSamplerParameteri(m_Handle, GL_TEXTURE_WRAP_T, ConvertToGL(m));
+	glSamplerParameteri(m_Handle, GL_TEXTURE_WRAP_R, ConvertToGL(m));
+	SamplerBase::setAddressMode(m);
 }
 
 void Sampler::setMaxAnisotropic( float level )
 {
-// 	bind();
+	if(level == maxAnisotropic())
+		return;
 	glSamplerParameterf(m_Handle, GL_TEXTURE_MAX_ANISOTROPY_EXT, level);
 	SamplerBase::setMaxAnisotropic(level);
 }

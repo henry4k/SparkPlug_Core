@@ -5,6 +5,13 @@
 namespace SparkPlug
 {
 
+Image::Image() :
+	m_Format(PixelFormat::Invalid),
+	m_Size(0, 0, 0),
+	m_Data(NULL)
+{
+}
+
 Image::Image( PixelFormat format, vec3i size ) :
 	m_Format(format),
 	m_Size(size)
@@ -14,7 +21,20 @@ Image::Image( PixelFormat format, vec3i size ) :
 
 Image::~Image()
 {
-	delete[] m_Data;
+	if(m_Data)
+		delete[] m_Data;
+}
+
+void Image::initFromRaw( PixelFormat format, vec3i size, void* pixels )
+{
+	if(m_Data)
+		delete[] m_Data;
+	
+	m_Format = format;
+	m_Size = size;
+	m_Data = (char*)pixels;
+	
+	// .. deal with it.
 }
 
 const PixelFormat& Image::format() const

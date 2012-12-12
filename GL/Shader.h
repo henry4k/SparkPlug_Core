@@ -2,54 +2,61 @@
 #define __SPARKPLUG_SHADER__
 
 #include <map>
+#include <set>
 #include <string>
 
+#include <SparkPlug/Reference.h>
 #include <SparkPlug/GL/OpenGL.h>
-#include <SparkPlug/GL/Texture.h>
+#include <SparkPlug/GL/Enums.h>
+#include <SparkPlug/GL/Object.h>
 
 namespace SparkPlug
 {
 namespace GL
 {
 
-class ShaderProgramm
+class Shader : public Object
 {
-	public:
-		ShaderProgramm();
-		~ShaderProgramm();
-		
-		bool loadFromSource( const char* source );
-		bool loadFromFile( const char* file );
-
-		// ...
-
-	protected:
-		GLuint m_Name; 
+public:
+	static StrongRef<Shader> CreateFromFile( Context* context, ShaderType type, const char* file );
+	~Shader();
+	
+	std::string toString() const;
+	
+private:
+	Shader( Context* context, ShaderType type );
+	std::string m_File;
 };
 
-class Shader
+
+class Program : public Object
 {
-	public:
-		Shader();
-		~Shader();
-		
-		bool load( const char* vert, const char* frag );
-		void bind() const;
-		
-		void setUniform( const char* name, int value ) const;
-		void setUniform( const char* name, float value ) const;
-		void setUniform( const char* name, int length, const float* value ) const;
-		
-		GLuint name() const { return m_Name; }
-		
-	protected:
-		void clear();
-		void updateUniformLocations();
-		int getUniformLocation( const char* uniformName ) const;
-		
-		GLuint m_Name;
-		std::map<std::string, int> m_UniformLocations;
+public:
+	static StrongRef<Program> Create( Context* context );
+	~Program();
+	
+	std::string toString() const;
+	
+	bool attach( StrongRef<Shader>& object );
+	bool detach( StrongRef<Shader>& object );
+	
+	bool link();
+	
+	bool setUniform( const char* name, int value );
+	bool setUniform( const char* name, float value );
+	bool setUniform( const char* name, int length, const float* value );
+	
+private:
+	Program( Context* context );
+	
+	void clear();
+	void updateUniformLocations();
+	int getUniformLocation( const char* uniformName ) const;
+	
+	std::set< StrongRef<Shader> > m_AttachedObjects;
+	std::map<std::string, int>    m_UniformLocations;
 };
+
 
 }
 }

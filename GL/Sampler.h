@@ -17,11 +17,8 @@ public:
 	Sampler( Context* context );
 	~Sampler();
 	
-	void bind( int textureUnit ) const;
-	static void Unbind( int textureUnit );
-	
-	void setFilter( TextureFilter filter );
-	void setAddressMode( TextureAddressMode mode );
+	void setFilter( TextureFilter f );
+	void setAddressMode( TextureAddressMode m );
 	void setMaxAnisotropic( float level );
 };
 

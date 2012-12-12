@@ -170,9 +170,17 @@ int PixelFormat::componentCount() const
 	return ComponentCount(m_Semantic);
 }
 
-String PixelFormat::asString() const
+std::string PixelFormat::asString() const
 {
 	return Format("%s %s", AsString(m_Semantic), AsString(m_Component));
 }
+
+
+
+const PixelFormat PixelFormat::Invalid(PixelSemantic(-1), PixelComponent(-1)); // Hope thats okay
+const PixelFormat PixelFormat::L8(PixelSemantic_Luminance, PixelComponent_UInt8);
+const PixelFormat PixelFormat::LA8(PixelSemantic_LuminanceAlpha, PixelComponent_UInt8);
+const PixelFormat PixelFormat::RGB8(PixelSemantic_RGB, PixelComponent_UInt8);
+const PixelFormat PixelFormat::RGBA8(PixelSemantic_RGBA, PixelComponent_UInt8);
 
 }

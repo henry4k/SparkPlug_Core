@@ -1,3 +1,5 @@
+#include <cstring> // memcpy
+#include <SparkPlug/Common.h>
 #include <SparkPlug/Unicode.h>
 
 namespace SparkPlug
@@ -10,7 +12,7 @@ namespace Unicode
 	static const Utf32 MaxUtf32        = 0x7FFFFFFF;
 	static const Utf32 MaxLegalUtf32   = 0x0010FFFF;
 
-	static const int HalfShift = 10;
+	static const int   HalfShift = 10;
 	static const Utf32 HalfBase = 0x0010000UL;
 	static const Utf32 HalfMask = 0x3FFUL;
 	
@@ -29,7 +31,7 @@ namespace Unicode
 	 * left as-is for anyone who may want to do such conversion, which was
 	 * allowed in earlier algorithms.
 	 */
-	static const Utf8 TrailingBytesForUTF8[256] =
+	static const Utf8 TrailingBytesForUtf8[256] =
 	{
 		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -42,11 +44,11 @@ namespace Unicode
 	};
 
 	/**
-	 * Magic values subtracted from a buffer value during UTF8 conversion.
+	 * Magic values subtracted from a buffer value during Utf8 conversion.
 	 * This table contains as many values as there might be trailing bytes
 	 * in a UTF-8 sequence.
 	 */
-	static const Utf32 OffsetsFromUTF8[6] =
+	static const Utf32 OffsetsFromUtf8[6] =
 	{
 		0x00000000UL, 0x00003080UL, 0x000E2080UL, 
 		0x03C82080UL, 0xFA082080UL, 0x82082080UL
@@ -84,149 +86,11 @@ const char* AsString( CharConversionResult v )
 	}
 }
 
-const char* AsString( CharConversionFlags v )
-{
-	switch(v)
-	{
-		case CharConversionFlags_Strict:
-			return "strict";
-
-		case CharConversionFlags_Lenient:
-			return "lenient";
-
-		default:
-			return "invalid enum";
-	}
-}
-
-
-
-// ---
-
-bool IsLegalChar( Utf32 ch )
-{
-	if(ch >= SurrogateHighStart && ch <= SurrogateLowEnd)
-		return false;
-
-	if(ch > MaxLegalUtf32)
-		return false;
-
-	return true;
-}
-
-class CharReader
-{
-public:
-	Utf32 ch;
-	int elementsToRead;
-
-	CharReader()
-	{
-		reset();
-	}
-
-	void reset()
-	{
-		ch = 0;
-		elementsToRead = 0;
-	}
-
-	CharConversionResult read( Utf8 e )
-	{
-		if(elementsToRead)
-		{
-			--elementsToRead;
-			ch += e;
-			if(elementsToRead > 0)
-			{
-				ch <<= 6;
-				return CharConversionResult_UnfinishedChar;
-			}
-			else
-			{
-				if(IsLegalChar(ch))
-					return CharConversionResult_Success;
-				else
-					return CharConversionResult_IllegalChar;
-			}
-		}
-		else
-		{
-			elementsToRead = TrailingBytesForUTF8[e];
-			if(elementsToRead == 0)
-			{
-				ch = e;
-				if(IsLegalChar(ch))
-					return CharConversionResult_Success;
-				else
-					return CharConversionResult_IllegalChar;
-			}
-			else
-			{
-				return CharConversionResult_UnfinishedChar;
-			}
-		}
-	}
-
-	CharConversionResult read( Utf16 e )
-	{
-		if(elementsToRead)
-		{
-			ch = e;
-			if(e >= SurrogateHighStart && <= SurrogateHighEnd)
-			{
-				elementsToRead = 1;
-				return CharConversionResult_UnfinishedChar;
-			}
-			else
-			{
-				if(IsLegalChar(ch))
-					return CharConversionResult_Success;
-				else
-					return CharConversionResult_IllegalChar;
-			}
-		}
-		else
-		{
-			if(e )
-		}
-	}
-
-	CharConversionResult read( Utf32 e )
-	{
-		ch = e;
-		if(IsLegalChar(ch))
-			return CharConversionResult_Success;
-		else
-			return CharConversionResult_IllegalChar;
-	}
-};
-
-
-
-// ---
-
-
-
-
-int StringLength( const Utf8* source, int maxLength )
-{
-	return 0;
-}
-
-int StringLength( const Utf32* source, int maxLength )
-{
-	int i = 0;
-	for(; (*source != 0) && (i <= maxLength); ++i, ++source)
-		;
-	return i;
-}
-
-bool IsLegalString( const Utf8* source, int length )
+bool IsLegalString( const Utf8* source, int units )
 {
     Utf8 a;
-    const Utf8* srcptr = source+length;
-    switch(length)
+    const Utf8* srcptr = source+units;
+    switch(units)
 	{
 		default: return false;
 		// Everything else falls through when "true"...
@@ -250,77 +114,115 @@ bool IsLegalString( const Utf8* source, int length )
     return true;
 }
 
+template<typename T>
+class CharReceiver
+{
+public:
+	virtual ~CharReceiver() {}
+	virtual void onReceiveChar( T ch ) = 0;
+};
 
-#define ILLEGAL_CHAR_ENCOUNTERED() \
-			if(flags == CharConversionFlags_Strict) \
-				return CharConversionResult_IllegalChar; \
-			else \
-				destination->push_back(ReplacementChar);
-// ^- Evil hack. :I
+template<typename T>
+class CharCounter : public CharReceiver<T>
+{
+public:
+	int count;
+	CharCounter() : count(0) {}
+	void onReceiveChar( T ch )  { ++count; }
+};
 
-CharConversionResult ConvertChars( CharConversionFlags flags, int length, const Utf32* source, std::vector<Utf16>* destination )
+template<typename T>
+class CharAppender : public CharReceiver<T>
+{
+public:
+	std::vector<T>* target;
+	CharAppender( std::vector<T>* d ) : target(d) {}
+	void onReceiveChar( T ch )  { target->push_back(ch); }
+};
+
+bool IsLegalChar( Utf32 ch )
+{
+	if(ch >= SurrogateHighStart && ch <= SurrogateLowEnd)
+		return false;
+
+	if(ch > MaxLegalUtf32)
+		return false;
+
+	return true;
+}
+
+CharConversionResult ConvertCharsEx( int flags, int units, const Utf32* source, CharReceiver<Utf16>* target )
 {
 	int i = 0;
-	for(; i < length; ++i)
+	for(; (units == -1) || (i < units); ++i)
 	{
 		Utf32 ch = source[i];
+
+		if((ch == 0) && (flags & CharConversionFlags_ZeroTerminated))
+			break;
+
 		if(ch <= MaxBmp)
 		{
 			// UTF-16 surrogate values are illegal in UTF-32.
 			if(ch >= SurrogateHighStart && ch <= SurrogateLowEnd)
 			{
-				if(flags == CharConversionFlags_Strict)
+				if(flags & CharConversionFlags_Strict)
 					return CharConversionResult_IllegalChar;
-				destination->push_back(ReplacementChar);
+				target->onReceiveChar(ReplacementChar);
 			}
 			else
-				destination->push_back(ch);
+				target->onReceiveChar(ch);
 		}
 		else if(ch > MaxLegalUtf32)
 		{
-			if(flags == CharConversionFlags_Strict)
+			if(flags & CharConversionFlags_Strict)
 				return CharConversionResult_IllegalChar;
-			destination->push_back(ReplacementChar);
+			target->onReceiveChar(ReplacementChar);
 		}
 		else
 		{
 			ch -= HalfBase;
-			destination->push_back( Utf16(ch >> HalfShift) + SurrogateHighStart );
-			destination->push_back( Utf16(ch  &  HalfMask) + SurrogateLowStart );
+			target->onReceiveChar( Utf16(ch >> HalfShift) + SurrogateHighStart );
+			target->onReceiveChar( Utf16(ch  &  HalfMask) + SurrogateLowStart );
 		}
 	}
 	return CharConversionResult_Success;
 }
 
-CharConversionResult ConvertChars( CharConversionFlags flags, int length, const Utf16* source, std::vector<Utf32>* destination )
+CharConversionResult ConvertCharsEx( int flags, int units, const Utf16* source, CharReceiver<Utf32>* target )
 {
 	int i = 0;
-	for(; i < length; ++i)
+	for(; (units == -1) || (i < units); ++i)
 	{
 		Utf32 ch = source[i];
 		Utf32 ch2;
+
+		if((ch == 0) && (flags & CharConversionFlags_ZeroTerminated))
+			break;
 
 		// If we have a surrogate pair, convert to UTF-32 first.
 		if(ch >= SurrogateHighStart && ch <= SurrogateHighEnd)
 		{
 			++i;
-			if(i >= length)
+			if(i >= units)
 				return CharConversionResult_UnfinishedChar;
 
 			ch2 = source[i];
+			if((ch2 == 0) && (flags & CharConversionFlags_ZeroTerminated))
+				return CharConversionResult_UnfinishedChar;
 
 			// If its a low surrogate, convert to UTF-32.
 			if(ch2 >= SurrogateLowStart && ch2 <= SurrogateLowEnd)
 			{
 				ch = ((ch - SurrogateHighStart) << HalfShift) + (ch2 - SurrogateLowStart) + HalfBase;
-				destination->push_back(ch);
+				target->onReceiveChar(ch);
 			}
 			else
 			{
 				// Its an unpaired high surrogate.
-				if(flags == CharConversionFlags_Strict)
+				if(flags & CharConversionFlags_Strict)
 					return CharConversionResult_IllegalChar;
-				destination->push_back(ReplacementChar);
+				target->onReceiveChar(ReplacementChar);
 			}
 		}
 		else
@@ -328,110 +230,92 @@ CharConversionResult ConvertChars( CharConversionFlags flags, int length, const 
 			// UTF-16 surrogate values are illegal in UTF-32.
 			if(ch >= SurrogateLowStart && ch <= SurrogateLowEnd)
 			{
-				if(flags == CharConversionFlags_Strict)
+				if(flags & CharConversionFlags_Strict)
 					return CharConversionResult_IllegalChar;
-				destination->push_back(ReplacementChar);
+				target->onReceiveChar(ReplacementChar);
 			}
 			else
-				destination->push_back(ch);
+				target->onReceiveChar(ch);
 		}
 	}
 	return CharConversionResult_Success;
 }
 
-CharConversionResult ConvertChars( CharConversionFlags flags, int length, const Utf32* source, std::vector<Utf8>* destination )
+CharConversionResult ConvertCharsEx( int flags, int units, const Utf32* source, CharReceiver<Utf8>* target )
 {
+	Utf8 buffer[4];
 	int i = 0;
-	for(; i < length; ++i)
+	for(; (units == -1) || (i < units); ++i)
 	{
 		int bytesToWrite = 0;
 		Utf32 ch = source[i];
+
+		if((ch == 0) && (flags & CharConversionFlags_ZeroTerminated))
+			break;
 		
 		if(ch >= SurrogateHighStart && ch <= SurrogateLowEnd)
 		{
-			if(flags == CharConversionFlags_Strict)
+			if(flags & CharConversionFlags_Strict)
 				return CharConversionResult_IllegalChar;
-			destination->push_back(ReplacementChar);
+			bytesToWrite = 3;
+			ch = ReplacementChar;
 		}
+		else if( ch < Utf32(0x80) )     bytesToWrite = 1;
+		else if( ch < Utf32(0x8000) )   bytesToWrite = 2;
+		else if( ch < Utf32(0x100000) ) bytesToWrite = 3;
+		else if( ch <= MaxLegalUtf32 )  bytesToWrite = 4;
 		else
 		{
-			if( ch < Utf32(0x80) )          bytesToWrite = 1;
-			else if( ch < Utf32(0x8000) )   bytesToWrite = 2;
-			else if( ch < Utf32(0x100000) ) bytesToWrite = 3;
-			else if( ch <= MaxLegalUtf32 )  bytesToWrite = 4;
-			else
-			{
-				if(flags == CharConversionFlags_Strict)
-					return CharConversionResult_IllegalChar;
-				bytesToWrite = 3;
-				ch = ReplacementChar;
-			}
-
-			destination->resize(destination->size()+bytesToWrite);
-			int pos = destination->size()-1;
-			
-			
-			switch(bytesToWrite)
-			{
-				case 4:
-					(*destination)[pos] = Utf8((ch | ByteMark) & ByteMask);
-					ch >>= 6;
-					--pos;
-				
-				case 3:
-					(*destination)[pos] = Utf8((ch | ByteMark) & ByteMask);
-					ch >>= 6;
-					--pos;
-				
-				case 2:
-					(*destination)[pos] = Utf8((ch | ByteMark) & ByteMask);
-					ch >>= 6;
-					--pos;
-				
-				case 1:
-					(*destination)[pos] = Utf8(ch | FirstByteMark[bytesToWrite]);
-
-				default:
-					;
-			}
+			if(flags & CharConversionFlags_Strict)
+				return CharConversionResult_IllegalChar;
+			bytesToWrite = 3;
+			ch = ReplacementChar;
 		}
+
+		int pos = bytesToWrite;
+		switch(bytesToWrite)
+		{
+			case 4: buffer[pos] = Utf8((ch | ByteMark) & ByteMask); ch >>= 6; --pos;
+			case 3: buffer[pos] = Utf8((ch | ByteMark) & ByteMask); ch >>= 6; --pos;
+			case 2: buffer[pos] = Utf8((ch | ByteMark) & ByteMask); ch >>= 6; --pos;
+			case 1: buffer[pos] = Utf8(ch | FirstByteMark[bytesToWrite]);
+			default: ;
+		}
+
+		for(int j = 0; j < bytesToWrite; ++j)
+			target->onReceiveChar(buffer[j]);
 	}
 	return CharConversionResult_Success;	
 }
 
-
-CharConversionResult ConvertChars( CharConversionFlags flags, int length, const Utf8* source, std::vector<Utf32>* destination )
+CharConversionResult ConvertCharsEx( int flags, int units, const Utf8* source, CharReceiver<Utf32>* target )
 {
 	int i = 0;
-	for(; i < length; ++i)
+	for(; (units == -1) || (i < units); ++i)
 	{
-		int extraBytesToRead = TrailingBytesForUTF8[source[i]];
+		int extraBytesToRead = TrailingBytesForUtf8[source[i]];
 		Utf32 ch = 0;
+		
+		if((source[i] == 0) && (flags & CharConversionFlags_ZeroTerminated))
+			break;
 
-		if(i+extraBytesToRead >= length)
-		{
+		if((units != -1) && (i+extraBytesToRead >= units))
 			return CharConversionResult_UnfinishedChar;
-		}
 
 		if(!IsLegalString(&source[i], extraBytesToRead+1))
-		{
 			return CharConversionResult_IllegalChar;
-		}
 
-		switch(extraBytesToRead)
+		for(int j = extraBytesToRead; j >= 0; --j)
 		{
-			case 5: ch += source[i++]; ch <<= 6;
-			case 4: ch += source[i++]; ch <<= 6;
-			case 3: ch += source[i++]; ch <<= 6;
-			case 2: ch += source[i++]; ch <<= 6;
-			case 1: ch += source[i++]; ch <<= 6;
-			case 0: ch += source[i];
-
-			default:
-					;
+			if(source[i] == 0)
+				return CharConversionResult_UnfinishedChar;
+			ch += source[i];
+			++i;
+			if(j != 0)
+				ch <<= 6;
 		}
 		
-		ch -= OffsetsFromUTF8[extraBytesToRead];
+		ch -= OffsetsFromUtf8[extraBytesToRead];
 
 		if(ch <= MaxLegalUtf32)
 		{
@@ -439,189 +323,149 @@ CharConversionResult ConvertChars( CharConversionFlags flags, int length, const 
 			// over Plane 17 (> 0x10FFFF) is illegal.
 			if(ch >= SurrogateHighStart && ch <= SurrogateLowEnd)
 			{
-				if(flags == CharConversionFlags_Strict)
+				if(flags & CharConversionFlags_Strict)
 					return CharConversionResult_IllegalChar;
 				ch = ReplacementChar;
 			}
 		}
 		else
 		{
-			if(flags == CharConversionFlags_Strict)
+			if(flags & CharConversionFlags_Strict)
 				return CharConversionResult_IllegalChar;
 			ch = ReplacementChar;
 		}
 
-		destination->push_back(ch);
+		target->onReceiveChar(ch);
 	}
 	return CharConversionResult_Success;
 }
 
-CharConversionResult ConvertChars( CharConversionFlags flags, int length, const Utf8* source, std::vector<Utf16>* destination )
+
+
+
+CharConversionResult ConvertChars( int flags, int units, const Utf32* source, std::vector<Utf16>* target )
+{
+	CharAppender<Utf16> receiver(target);
+	return ConvertCharsEx(flags, units, source, &receiver);
+}
+
+CharConversionResult ConvertChars( int flags, int units, const Utf32* source, std::vector<Utf8>* target )
+{
+	CharAppender<Utf8> receiver(target);
+	return ConvertCharsEx(flags, units, source, &receiver);
+}
+
+CharConversionResult ConvertChars( int flags, int units, const Utf16* source, std::vector<Utf32>* target )
+{
+	CharAppender<Utf32> receiver(target);
+	return ConvertCharsEx(flags, units, source, &receiver);
+}
+
+CharConversionResult ConvertChars( int flags, int units, const Utf8* source, std::vector<Utf32>* target )
+{
+	CharAppender<Utf32> receiver(target);
+	return ConvertCharsEx(flags, units, source, &receiver);
+}
+
+CharConversionResult ConvertChars( int flags, int units, const Utf16* source, std::vector<Utf8>* target )
 {
 	std::vector<Utf32> buffer;
-	buffer.reserve(length);
+	if(units != -1)
+		buffer.reserve(units);
 
-	CharConversionResult result = ConvertChars(flags, length, source, &buffer);
+	CharConversionResult result = ConvertChars(flags, units, source, &buffer);
 	if(result != CharConversionResult_Success)
 		return result;
 
-	return ConvertChars(flags, buffer.size(), &buffer[0], destination);
+	return ConvertChars(flags, buffer.size(), &buffer[0], target);
 }
 
-CharConversionResult ConvertChars( CharConversionFlags flags, int length, const Utf16* source, std::vector<Utf8>* destination )
+CharConversionResult ConvertChars( int flags, int units, const Utf8* source, std::vector<Utf16>* target )
 {
 	std::vector<Utf32> buffer;
-	buffer.reserve(length);
+	if(units != -1)
+		buffer.reserve(units);
 
-	CharConversionResult result = ConvertChars(flags, length, source, &buffer);
+	CharConversionResult result = ConvertChars(flags, units, source, &buffer);
 	if(result != CharConversionResult_Success)
 		return result;
 
-	return ConvertChars(flags, buffer.size(), &buffer[0], destination);
+	return ConvertChars(flags, buffer.size(), &buffer[0], target);
 }
 
-
-
-
-
-
-// --------------------- OLD ----------------------
-/*
-int ConvertChars( int length, const Utf16* source, std::vector<Utf8>* destination )
+template<typename T>
+int StringSize( const T* source, int maxUnits )
 {
 	int i = 0;
-	for(; i < length; ++i)
-	{
-		int bytesToWrite = 0;
-		Utf32 ch = source[i];
-		Utf32 ch2;
-		
-		// If we have a surrogate pair, convert to UTF32.
-		if(ch >= SurrogateHighStart && ch <= SurrogateHighEnd)
-		{
-			ch2 = ch;
-			if(ch2 >= SurrogateLowStart && ch2 <= SurrogateLowEnd)
-			{
-				ch = ((ch - SurrogateLowEnd) << HalfShift) + (ch2 - SurrogateLowStart) + HalfBase;
-			}
-			else
-			{
-				// It's an unpaired high surrogate.
-				ch = ReplacementChar;
-			}
-		}
-		else
-		{
-			// UTF-16 surrogate values are illegal in UTF-32.
-			if(ch >= SurrogateLowStart && ch <= SurrogateLowEnd)
-			{
-				ch = ReplacementChar;
-			}
-		}
-
-		if(ch < Utf32(0x80))
-			bytesToWrite = 1;
-		else if(ch < Utf32(0x800))
-			bytesToWrite = 2;
-		else if(ch < Utf32(0x10000))
-			bytesToWrite = 3;
-		else if(ch <= MaxLegalUtf32)
-			bytesToWrite = 4;
-		else
-		{
-			bytesToWrite = 3;
-			ch = ReplacementChar;
-		}
-
-		destination->resize(destination->size()+bytesToWrite);
-		int pos = destination->size()-1;
-
-		switch(bytesToWrite)
-		{
-			case 4:
-				(*destination)[pos] = Utf8((ch | ByteMark) & ByteMask);
-				ch >>= 6;
-				--pos;
-			
-			case 3:
-				(*destination)[pos] = Utf8((ch | ByteMark) & ByteMask);
-				ch >>= 6;
-				--pos;
-			
-			case 2:
-				(*destination)[pos] = Utf8((ch | ByteMark) & ByteMask);
-				ch >>= 6;
-				--pos;
-			
-			case 1:
-				(*destination)[pos] = Utf8(ch | FirstByteMark[bytesToWrite]);
-
-			default:
-				;
-		}
-	}
+	for(; ((maxUnits == -1) || (i < maxUnits)) && (source[i] != 0); ++i)
+		;
 	return i;
 }
 
-
-int ConvertChars( int length, const Utf8* source, std::vector<Utf16>* destination )
+template<typename T>
+CharConversionResult CopyChars( int flags, int units, const T* source, std::vector<T>* destination )
 {
-	int i = 0;
-	for(; i < length; ++i)
+	int oldSize = destination->size();
+	if(flags & CharConversionFlags_ZeroTerminated)
 	{
-		int extraBytesToRead = TrailingBytesForUTF8[source[i]];
-		Utf32 ch = 0;
+		if(units != -1)
+			destination->reserve(oldSize+units);
 
-		if(i+extraBytesToRead >= length)
+		for(int i = 0; (units == -1) || (i < units); ++i)
 		{
-			return -1;
-		}
-
-		if(!IsLegalString(&source[i], extraBytesToRead+1))
-		{
-			return -1;
-		}
-
-		switch(extraBytesToRead)
-		{
-			case 5: ch += source[i++]; ch <<= 6;
-			case 4: ch += source[i++]; ch <<= 6;
-			case 3: ch += source[i++]; ch <<= 6;
-			case 2: ch += source[i++]; ch <<= 6;
-			case 1: ch += source[i++]; ch <<= 6;
-			case 0: ch += source[i];
-
-			default:
-					;
-		}
-
-		ch -= OffsetsFromUTF8[extraBytesToRead];
-
-		if(ch <= MaxBmp)
-		{
-			// UTF-16 surrogate values are illegal in UTF-32
-			if(ch >= SurrogateHighStart && ch <= SurrogateLowEnd)
-			{
-				ch = ReplacementChar;
-			}
-
-			destination->push_back(ch);
-		}
-		else if(ch > MaxUtf16)
-		{
-			ch = ReplacementChar;
-		}
-		else
-		{
-			ch -= HalfBase;
-			destination->push_back( Utf16((ch >> HalfShift) + SurrogateHighStart ) );
-			destination->push_back( Utf16((ch  &  HalfMask) + SurrogateLowStart ) );
+			if(source[i] == 0)
+				break;
+			destination->push_back(source[i]);
 		}
 	}
-	return i;
-}
-*/
+	else
+	{
+		if(units == -1)
+			units = StringSize(source, -1);
 
+		destination->resize(oldSize+units);
+		memcpy(&destination[oldSize], source, units);
+	}
+	return CharConversionResult_Success;
+}
+
+CharConversionResult ConvertChars( int flags, int units, const Utf32* source, std::vector<Utf32>* target )
+{
+	return CopyChars<Utf32>(flags, units, source, target);
+}
+
+CharConversionResult ConvertChars( int flags, int units, const Utf16* source, std::vector<Utf16>* target )
+{
+	return CopyChars<Utf16>(flags, units, source, target);
+}
+
+CharConversionResult ConvertChars( int flags, int units, const Utf8* source, std::vector<Utf8>* target )
+{
+	return CopyChars<Utf8>(flags, units, source, target);
+}
+
+
+
+int StringLength( const Utf8* source, int maxUnits )
+{
+	CharCounter<Utf32> counter;
+	ConvertCharsEx(CharConversionFlags_ZeroTerminated, maxUnits, source, &counter);
+	// Ignore conversion result
+	return counter.count;
+}
+
+int StringLength( const Utf16* source, int maxUnits )
+{
+	CharCounter<Utf32> counter;
+	ConvertCharsEx(CharConversionFlags_ZeroTerminated, maxUnits, source, &counter);
+	// Ignore conversion result
+	return counter.count;
+}
+
+int StringLength( const Utf32* source, int maxUnits )
+{
+	return StringSize(source, maxUnits);
+}
 
 } // namespace SparkPlug
 

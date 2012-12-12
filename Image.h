@@ -10,8 +10,16 @@ namespace SparkPlug
 class Image
 {
 public:
+	Image();
 	Image( PixelFormat format, vec3i size );
 	~Image();
+	
+	/**
+	 * (Re-)Initializes an image with new content.
+	 * IMPORTANT: The pixel data is not memcopied,
+	 * its used directly as internal data pointer.
+	 */
+	void initFromRaw( PixelFormat format, vec3i size, void* pixels );
 	
 	const PixelFormat& format() const;
 	

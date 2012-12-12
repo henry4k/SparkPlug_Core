@@ -5,17 +5,17 @@
 #include <cassert>
 #include <string>
 #include <SparkPlug/Log.h>
+#include <SparkPlug/Logic.h>
 
 namespace SparkPlug
 {
 
-typedef std::string String;
 typedef unsigned int uint;
 
 void FatalError( const char* format, ... );
 
-String Format( const char* format, ... );
-String FormatV( const char* format, std::va_list& vl );
+std::string Format( const char* format, ... );
+std::string FormatV( const char* format, std::va_list& vl );
 
 char* ScratchPad( int size );
 

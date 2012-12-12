@@ -1,0 +1,1 @@
+#ifndef __SPARKPLUG_GL_VERTEXFORMAT__

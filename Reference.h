@@ -9,24 +9,19 @@
 namespace SparkPlug
 {
 
-class IReferenceListener
+class ReferenceCounted;
+
+class ReferenceListener
 {
 	public:
-		virtual ~IReferenceListener() {}
+		virtual ~ReferenceListener() {}
 
-		virtual void onZeroReferences( void* pointer ) = 0;
+		virtual void onZeroReferences( const ReferenceCounted* pointer ) = 0;
 };
 
-class RefCounter
+class ReferenceCounted
 {
 	public:
-		/**
-		 * Creates an instance.
-		 * Does not add any references!
-		 */
-		template<typename T>
-		static RefCounter* Create( T* pointer );
-		
 		/**
 		 * Adds one reference.
 		 */
@@ -41,33 +36,28 @@ class RefCounter
 		/**
 		 * ...
 		 */
-		void addListener( IReferenceListener* listener );
+		void addListener( ReferenceListener* listener );
 		
 		/**
 		 * ...
 		 */
-		void removeListener( IReferenceListener* listener );
-
-		void* getPointer() const;
-
-		const void* getConstPointer() const;
+		void removeListener( ReferenceListener* listener );
+	
+	protected:
+		ReferenceCounted();
+		virtual ~ReferenceCounted();
 		
+		/**
+		 * Prevent strong reference from deleting this object.
+		 * Usefull inside constructor, when it calls functions that create references.
+		 * Dont forget to unlock() the object afterwards.
+		 */
+		void lock();
+		void unlock();
+
 	private:
-		typedef void (*DeleteFn)(void* p);
-
-		template<typename T>
-		static void DeleteFnT( void* p );
-
-		// Refcounter may only be constructed on the heap (so that you can *delete* it)
-		RefCounter( void* pointer, DeleteFn deleteFn );
-		
-		// See constructor info
-		~RefCounter();
-
-		void* m_Pointer;
-		DeleteFn m_DeleteFn;
 		int m_StrongReferences;
-		std::set< IReferenceListener* > m_Listeners;
+		std::set< ReferenceListener* > m_Listeners;
 };
 
 
@@ -76,10 +66,13 @@ class Reference
 	public:
 		operator bool() const;
 		bool operator!() const;
+
+		bool operator==( const Reference& other ) const;
+		bool operator!=( const Reference& other ) const;
+		bool operator<( const Reference& other ) const;
 	
 	//protected:
-		RefCounter* m_RefCounter;
-		std::size_t m_PointerOffset;
+		ReferenceCounted* m_RefCounted;
 	
 	protected:
 		Reference();
@@ -99,10 +92,11 @@ class ReferenceT : public Reference
 	protected:
 		ReferenceT();
 
-		void setByPointer( T* ptr );
-
 		template< typename T1 >
 		void setByReference( const Reference& ref );
+
+		template< typename T1 >
+		void setByReferenceCounted( ReferenceCounted* refCounter );
 };
 
 
@@ -112,14 +106,17 @@ class StrongRef : public ReferenceT<T>
 	public:
 		StrongRef();
 		
-		explicit StrongRef( T* ptr );
-		
-		StrongRef( const ReferenceT<T>& ref );
+		StrongRef( ReferenceCounted* ptr );
+
+		StrongRef( const StrongRef<T>& ref );
 		
 		template< typename T1 >
 		StrongRef( const ReferenceT<T1>& ref );
 		
 		~StrongRef();
+		
+		
+		StrongRef<T>& operator=( const StrongRef<T>& ref );
 		
 		template< typename T1 >
 		StrongRef<T>& operator=( const ReferenceT<T1>& ref );
@@ -127,23 +124,25 @@ class StrongRef : public ReferenceT<T>
 
 
 template< typename T >
-class WeakRef : public ReferenceT<T>, public IReferenceListener
+class WeakRef : public ReferenceT<T>, public ReferenceListener
 {
 	public:
 		WeakRef();
 		
-		WeakRef( const ReferenceT<T>& ref );
+		WeakRef( const WeakRef<T>& ref );
 		
 		template< typename T1 >
 		WeakRef( const ReferenceT<T1>& ref );
 
 		~WeakRef();
+		
+		WeakRef<T>& operator=( const WeakRef<T>& ref );
 
 		template< typename T1 >
 		WeakRef<T>& operator=( const ReferenceT<T1>& ref );
 
 	protected:
-		void onZeroReferences( void* pointer );
+		void onZeroReferences( const ReferenceCounted* pointer );
 };
 
 

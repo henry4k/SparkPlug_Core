@@ -1,6 +1,7 @@
 #ifndef __SPARKPLUG_GL_OBJECT__
 #define __SPARKPLUG_GL_OBJECT__
 
+#include <SparkPlug/Reference.h>
 #include <SparkPlug/GL/OpenGL.h>
 
 
@@ -12,7 +13,7 @@ namespace GL
 
 class Context;
 
-class Object
+class Object : public ReferenceCounted
 {
 public:
 	Object( Context* context );

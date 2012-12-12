@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstdlib>
 #include <exception>
 #include <SparkPlug/Common.h>
 
@@ -12,19 +13,21 @@ void FatalError( const char* format, ... )
 	va_start(vl, format);
 		LogError("%s", FormatV(format, vl).c_str());
 	va_end(vl);
-	std::terminate();
+
+	//std::terminate();
+	std::abort();
 }
 
-String Format( const char* format, ... )
+std::string Format( const char* format, ... )
 {
 	std::va_list vl;
 	va_start(vl, format);
-		String r = FormatV(format, vl);
+		std::string r = FormatV(format, vl);
 	va_end(vl);
 	return r;
 }
 
-String FormatV( const char* format, std::va_list& vl )
+std::string FormatV( const char* format, std::va_list& vl )
 {
 	char* p = ScratchPad(1024);
 	int count = std::vsprintf(p, format, vl);

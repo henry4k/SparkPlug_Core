@@ -1,25 +1,10 @@
-/// ---- RefCounter ----
-
-template<typename T>
-RefCounter* RefCounter::Create( T* pointer )
-{
-	return new RefCounter(pointer, DeleteFnT<T>);
-}
-
-template<typename T>
-void RefCounter::DeleteFnT( void* p )
-{
-	delete reinterpret_cast<T*>(p);
-}
-
-
 /// ---- ReferenceT ----
 
 template< typename T >
 T* ReferenceT<T>::get() const
 {
-	if(m_RefCounter)
-		return reinterpret_cast<T*>( reinterpret_cast<char*>(m_RefCounter->getPointer())+m_PointerOffset);
+	if(m_RefCounted)
+		return reinterpret_cast<T*>(m_RefCounted);
 	else
 		return NULL;
 }
@@ -27,8 +12,8 @@ T* ReferenceT<T>::get() const
 template< typename T >
 const T* ReferenceT<T>::getConst() const
 {
-	if(m_RefCounter)
-		return reinterpret_cast<const T*>( reinterpret_cast<const char*>(m_RefCounter->getConstPointer())+m_PointerOffset);
+	if(m_RefCounted)
+		return reinterpret_cast<T*>(m_RefCounted);
 	else
 		return NULL;
 }
@@ -45,80 +30,82 @@ ReferenceT<T>::ReferenceT() :
 {
 }
 
-template< typename T >
-void ReferenceT<T>::setByPointer( T* ptr )
-{
-	m_RefCounter = RefCounter::Create<T>(ptr);
-	m_PointerOffset = 0;
-}
-
-template< typename T >
-template< typename T1 >
-void ReferenceT<T>::setByReference( const Reference& ref )
-{
-	m_RefCounter = ref.m_RefCounter;
-	const T1*  from = reinterpret_cast<const T1*>( reinterpret_cast<const char*>(ref.m_RefCounter->getConstPointer()) + ref.m_PointerOffset );
-	const T*   to   = static_cast<const T*>(from);
-	m_PointerOffset = ref.m_PointerOffset+( reinterpret_cast<const char*>(to) - reinterpret_cast<const char*>(from) );
-	if(m_PointerOffset != 0)
-		FatalError("WHAT THE FUCK?! PointerOffset != 0  :OOO!!1 O_O'");
-	// ref.m_PointerOffset+( sizeof(T)-sizeof(T1) );
-}
-
 
 /// ---- StrongRef ----
 
 template< typename T >
-StrongRef<T>::StrongRef()
+StrongRef<T>::StrongRef() :
+	ReferenceT<T>()
 {
-	
 }
 
 template< typename T >
-StrongRef<T>::StrongRef( T* ptr )
+StrongRef<T>::StrongRef( ReferenceCounted* ptr )
 {
-	ReferenceT<T>::setByPointer(ptr);
-	this->Reference::m_RefCounter->addStrongRef();
+	this->Reference::m_RefCounted = ptr;
+	if(this->Reference::m_RefCounted)
+		this->Reference::m_RefCounted->addStrongRef();
 }
 
 template< typename T>
-StrongRef<T>::StrongRef( const ReferenceT<T>& ref )
+StrongRef<T>::StrongRef( const StrongRef<T>& ref ) :
+	ReferenceT<T>()
 {
-	ReferenceT<T>::template setByReference<T>(ref);
-	if(this->Reference::m_RefCounter)
-		this->Reference::m_RefCounter->addStrongRef();
+	this->Reference::m_RefCounted = ref.get();
+	if(this->Reference::m_RefCounted)
+		this->Reference::m_RefCounted->addStrongRef();
 }
 
 template< typename T>
 template< typename T1 >
-StrongRef<T>::StrongRef( const ReferenceT<T1>& ref )
+StrongRef<T>::StrongRef( const ReferenceT<T1>& ref ) :
+	ReferenceT<T>()
 {
-	ReferenceT<T>::template setByReference<T1>(ref);
-	if(this->Reference::m_RefCounter)
-		this->Reference::m_RefCounter->addStrongRef();
+	this->Reference::m_RefCounted = ref.get();
+	if(this->Reference::m_RefCounted)
+		this->Reference::m_RefCounted->addStrongRef();
 }
 
 template< typename T >
 StrongRef<T>::~StrongRef()
 {
-	if(this->Reference::m_RefCounter)
-		this->Reference::m_RefCounter->releaseStrongRef();
+	if(this->Reference::m_RefCounted)
+		this->Reference::m_RefCounted->releaseStrongRef();
+}
+
+template< typename T >
+StrongRef<T>& StrongRef<T>::operator=( const StrongRef<T>& ref )
+{
+	// Check for self assignment implicitly done here =)
+	if(this->Reference::m_RefCounted == ref.m_RefCounted)
+		return *this;
+
+	if(this->Reference::m_RefCounted)
+		this->Reference::m_RefCounted->releaseStrongRef();
+
+	this->Reference::m_RefCounted = ref.get();
+
+	if(this->Reference::m_RefCounted)
+		this->Reference::m_RefCounted->addStrongRef();
+
+	return *this;
 }
 
 template< typename T >
 template< typename T1 >
 StrongRef<T>& StrongRef<T>::operator=( const ReferenceT<T1>& ref )
 {
-	if(this->Reference::m_RefCounter == ref.m_RefCounter)
+	// Check for self assignment implicitly done here =)
+	if(this->Reference::m_RefCounted == ref.m_RefCounted)
 		return *this;
 
-	if(this->Reference::m_RefCounter)
-		this->Reference::m_RefCounter->releaseStrongRef();
+	if(this->Reference::m_RefCounted)
+		this->Reference::m_RefCounted->releaseStrongRef();
 
-	ReferenceT<T>::template setByReference<T1>(ref);
+	this->Reference::m_RefCounted = ref.get();
 
-	if(this->Reference::m_RefCounter)
-		this->Reference::m_RefCounter->addStrongRef();
+	if(this->Reference::m_RefCounted)
+		this->Reference::m_RefCounted->addStrongRef();
 
 	return *this;
 }
@@ -127,55 +114,76 @@ StrongRef<T>& StrongRef<T>::operator=( const ReferenceT<T1>& ref )
 /// ---- WeakRef ----
 
 template< typename T >
-WeakRef<T>::WeakRef()
+WeakRef<T>::WeakRef() :
+	ReferenceT<T>()
 {
 }
 
 template< typename T >
-WeakRef<T>::WeakRef( const ReferenceT<T>& ref )
+WeakRef<T>::WeakRef( const WeakRef<T>& ref ) :
+	ReferenceT<T>()
 {
-	ReferenceT<T>::template setByReference<T>(ref);
-	if(this->Reference::m_RefCounter)
-		this->Reference::m_RefCounter->addListener(this);
+	this->Reference::m_RefCounted = ref.get();
+	if(this->Reference::m_RefCounted)
+		this->Reference::m_RefCounted->addListener(this);
 }
 
 template< typename T >
 template< typename T1 >
-WeakRef<T>::WeakRef( const ReferenceT<T1>& ref )
+WeakRef<T>::WeakRef( const ReferenceT<T1>& ref ) :
+	ReferenceT<T>()
 {
-	ReferenceT<T>::template setByReference<T1>(ref);
-	if(this->Reference::m_RefCounter)
-		this->Reference::m_RefCounter->addListener(this);
+	this->Reference::m_RefCounted = ref.get();
+	if(this->Reference::m_RefCounted)
+		this->Reference::m_RefCounted->addListener(this);
 }
 
 template< typename T >
 WeakRef<T>::~WeakRef()
 {
-	if(this->Reference::m_RefCounter)
-		this->Reference::m_RefCounter->removeListener(this);
+	if(this->Reference::m_RefCounted)
+		this->Reference::m_RefCounted->removeListener(this);
+}
+
+template< typename T >
+WeakRef<T>& WeakRef<T>::operator=( const WeakRef<T>& ref )
+{
+	// Check for self assignment implicitly done here =)
+	if(this->Reference::m_RefCounted == ref.m_RefCounted)
+		return *this;
+
+	if(this->Reference::m_RefCounted)
+		this->Reference::m_RefCounted->removeListener(this);
+
+	this->Reference::m_RefCounted = ref.get();
+
+	if(this->Reference::m_RefCounted)
+		this->Reference::m_RefCounted->addListener(this);
+
+	return *this;
 }
 
 template< typename T >
 template< typename T1 >
 WeakRef<T>& WeakRef<T>::operator=( const ReferenceT<T1>& ref )
 {
-	if(this->Reference::m_RefCounter == ref.m_RefCounter)
+	// Check for self assignment implicitly done here =)
+	if(this->Reference::m_RefCounted == ref.m_RefCounted)
 		return *this;
 
-	if(this->Reference::m_RefCounter)
-		this->Reference::m_RefCounter->removeListener(this);
+	if(this->Reference::m_RefCounted)
+		this->Reference::m_RefCounted->removeListener(this);
 
-	ReferenceT<T>::template setByReference<T1>(ref);
+	this->Reference::m_RefCounted = ref.get();
 
-	if(this->Reference::m_RefCounter)
-		this->Reference::m_RefCounter->addListener(this);
+	if(this->Reference::m_RefCounted)
+		this->Reference::m_RefCounted->addListener(this);
 
 	return *this;
 }
 
 template< typename T >
-void WeakRef<T>::onZeroReferences( void* pointer )
+void WeakRef<T>::onZeroReferences( const ReferenceCounted* pointer )
 {
-	this->Reference::m_RefCounter = NULL;
-	this->Reference::m_PointerOffset = 0;
+	this->Reference::m_RefCounted = NULL;
 }
