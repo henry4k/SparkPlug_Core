@@ -18,8 +18,8 @@ std::ios_base::openmode CreateOpenMode( int flags )
 		r |= ios_base::trunc;
 	else if(flags & FileMode::Append)
 		r |= ios_base::app;
-	else
-		; // overwrite
+	//else
+	//	; // TODO: overwrite
 
 	return r;
 }

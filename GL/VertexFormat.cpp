@@ -1,1 +1,1 @@
-#ifndef __SPARKPLUG_GL_VERTEXFORMAT__
+#include <SparkPlug/GL/VertexFormat.h>
