@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <SparkPlug/Common.h>
+#include <SparkPlug/GL/OpenGL.h>
 
 
 namespace SparkPlug
@@ -19,6 +20,9 @@ enum DataType
 	DataType_Float32,
 	DataType_Float64
 };
+const char* AsString( DataType type );
+GLenum ConvertToGL( DataType type );
+int SizeOf( DataType type );
 
 
 class VertexAttribute
@@ -27,9 +31,12 @@ public:
 	VertexAttribute( int count, DataType type );
 	virtual ~VertexAttribute();
 	
-	int componentCount() const;
-	int componentType() const;
-	int sizeInBytes() const;
+	bool operator == ( const VertexAttribute& format ) const;
+	bool operator != ( const VertexAttribute& format ) const;
+	
+	     int componentCount() const;
+	DataType componentType() const;
+	     int sizeInBytes() const;
 	
 private:
 	int m_Count;
@@ -41,6 +48,7 @@ class VertexFormat
 {
 public:
 	VertexFormat();
+	VertexFormat( const char* def );
 	VertexFormat( const VertexFormat& source );
 	VertexFormat& operator = ( const VertexFormat& source );
 	

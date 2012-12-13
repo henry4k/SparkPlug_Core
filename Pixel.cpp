@@ -129,8 +129,8 @@ PixelFormat& PixelFormat::operator = ( const PixelFormat& source )
 bool PixelFormat::isValid() const
 {
 	return
-		Inside<int>(PixelSemantic_Luminance, m_Semantic, PixelSemantic_RGBA) &&
-		Inside<int>(PixelComponent_UInt8, m_Component, PixelComponent_Float32);
+		ExclusiveInside<int>(PixelSemantic_Luminance, m_Semantic, PixelSemantic_RGBA) &&
+		ExclusiveInside<int>(PixelComponent_UInt8, m_Component, PixelComponent_Float32);
 }
 
 bool PixelFormat::operator == ( const PixelFormat& format ) const

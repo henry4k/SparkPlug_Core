@@ -50,7 +50,13 @@ T Abs(const T& v)
 
 /// Tests if the value is inside a range
 template<class T>
-bool Inside(const T& min, const T& v, const T& max)
+bool ExclusiveInside(const T& min, const T& v, const T& max)
+{
+	return (v > min) && (v < max);
+}
+
+template<class T>
+bool InclusiveInside(const T& min, const T& v, const T& max)
 {
 	return (v >= min) && (v <= max);
 }
@@ -122,3 +128,4 @@ int ArrayIndex( const vec<D,int>& pos, const vec<D,int>& size )
 }
 
 #endif
+

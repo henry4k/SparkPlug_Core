@@ -106,7 +106,7 @@ private:
 class VertexBuffer : public Buffer
 {
 public:
-	StrongRef<VertexBuffer> Create( Context* context, const VertexFormat& format, int count, BufferUsage usage );
+	static StrongRef<VertexBuffer> Create( Context* context, const VertexFormat& format, int count, BufferUsage usage );
 
 	const VertexFormat& format() const;
 
