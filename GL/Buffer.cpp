@@ -213,9 +213,12 @@ Buffer::Buffer( Context* context, BufferTarget target, BufferUsage usage, int co
 	m_Locked(false)
 {
 	glGenBuffersARB(1, &m_Handle);
+	CheckGl();
 	
 	// bind()
-	glBufferDataARB(target, size(), NULL, ConvertToGL(m_Usage));
+	glBufferDataARB(ConvertToGL(m_Target), size(), NULL, ConvertToGL(m_Usage));
+
+	CheckGl();
 }
 
 Buffer::~Buffer()
@@ -268,6 +271,8 @@ void Buffer::copyFrom( const void* source, int count, int start )
 	assert(start+count <= m_Count);
 	// bind()
 	glBufferSubDataARB(target(), start*elementSize(), count*elementSize(), source);
+
+	CheckGl();
 }
 
 void Buffer::copyTo( void* destination, int count, int start )
@@ -276,6 +281,8 @@ void Buffer::copyTo( void* destination, int count, int start )
 	assert(start+count <= m_Count);
 	// bind()
 	glGetBufferSubDataARB(target(), start*elementSize(), count*elementSize(), destination);
+
+	CheckGl();
 }
 
 int Buffer::elementSize() const

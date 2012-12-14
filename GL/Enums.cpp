@@ -23,6 +23,8 @@ const char* AsString( TextureType type )
 			return "Rect";
 		case TextureType_CubeMap:
 			return "CubeMap";
+		case TextureType_Count:
+			;
 	}
 	return "UnknownTextureType";
 }
@@ -41,6 +43,8 @@ GLenum ConvertToGL( TextureType type )
 			return GL_TEXTURE_RECTANGLE;
 		case TextureType_CubeMap:
 			return GL_TEXTURE_CUBE_MAP;
+		case TextureType_Count:
+			;
 	}
 	FatalError("Invalid texture type: %u", type);
 	return 0;
@@ -60,6 +64,8 @@ GLenum ConvertToProxyGL( TextureType type )
 			return GL_PROXY_TEXTURE_RECTANGLE;
 		case TextureType_CubeMap:
 			return GL_PROXY_TEXTURE_CUBE_MAP;
+		case TextureType_Count:
+			;
 	}
 	FatalError("Invalid texture type: %u", type);
 	return 0;
@@ -75,6 +81,8 @@ const char* AsString( TextureFilter filter )
 			return "Bilinear";
 		case TextureFilter_Trilinear:
 			return "Trilinear";
+		case TextureFilter_Count:
+			;
 	}
 	return "UnknownTextureFilter";
 }
@@ -100,6 +108,9 @@ GLint ConvertToGL( TextureFilter filter, bool usingMipMaps )
 				return GL_LINEAR_MIPMAP_LINEAR;
 			else
 				return GL_LINEAR;
+
+		case TextureFilter_Count:
+			;
 	}
 	FatalError("Invalid texture filter: %u", filter);
 	return 0;
@@ -111,6 +122,7 @@ const char* AsString( TextureAddressMode mode )
 	{
 		case TextureAddressMode_Repeat: return "Repeat";
 		case TextureAddressMode_Clamp:  return "Clamp";
+		case TextureAddressMode_Count: ;
 	}
 	return "UnknownTextureAddressMode";
 }
@@ -121,6 +133,7 @@ GLenum ConvertToGL( TextureAddressMode mode )
 	{
 		case TextureAddressMode_Repeat: return GL_REPEAT;
 		case TextureAddressMode_Clamp:  return GL_CLAMP_TO_EDGE;
+		case TextureAddressMode_Count: ;
 	}
 	FatalError("Invalid texture address mode %u", mode);
 	return 0;

@@ -95,10 +95,32 @@ class Context
 		
  		void bindProgram( const StrongRef<Program>& program );
  		const StrongRef<Program>& boundProgram() const;
+
+
+		void enableDebug( bool e );
+
+		void emitDebugMessage(
+			DebugEventSource source,
+			DebugEventType type,
+			int id,
+			DebugEventSeverity severity,
+			const char* message
+		);
 	
 	protected:
 		Context();
 		void postInit();
+
+		/**
+		 * The default action logs the errors.
+		 */
+		virtual void onDebugEvent(
+			DebugEventSource source,
+			DebugEventType type,
+			int id,
+			DebugEventSeverity severity,
+			const char* message
+		);
 		
 	private:
 		Limits* m_Limits;
@@ -109,6 +131,20 @@ class Context
 		StrongRef<Sampler>* m_Samplers; // Length is limits().maxTextureUnits
 
  		StrongRef<Program> m_Program;
+
+
+		static void onDebugEventWrapper(
+			GLenum source,
+			GLenum type,
+			GLuint id,
+			GLenum severity,
+			GLsizei length,
+			const char* message,
+			void* userParam
+		);
+
+
+		bool m_Debug;
 };
 
 }

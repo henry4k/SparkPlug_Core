@@ -22,6 +22,8 @@ const char* AsString( DataType type )
 			return "Float32";
 		case DataType_Float64:
 			return "Float64";
+		default:
+			;
 	}
 	return "UnknownDataType";
 }
@@ -40,6 +42,8 @@ GLenum ConvertToGL( DataType type )
 			return GL_FLOAT;
 		case DataType_Float64:
 			return GL_DOUBLE;
+		default:
+			;
 	}
 	FatalError("Invalid data type: %u", type);
 	return 0;
@@ -59,6 +63,8 @@ int SizeOf( DataType type )
 			return sizeof(GLfloat);
 		case DataType_Float64:
 			return sizeof(GLdouble);
+		default:
+			;
 	}
 	FatalError("Invalid index type: %u", type);
 	return 0;
@@ -186,15 +192,18 @@ VertexFormat::VertexFormat( const char* def )
 						dataType = DataType_Float64;
 						break;
 					default:
+						FatalError("Unknown data type %c", *def);
 						assert(false);
 				}
 				
 				appendAttribute(VertexAttribute(count, dataType));
+
+				mode = 0;
 				
 			} break;
 			
 			default:
-				assert(false);
+				FatalError("Invalid mode");
 		}
 	}
 }
@@ -207,6 +216,7 @@ VertexFormat::VertexFormat( const VertexFormat& source ) :
 VertexFormat& VertexFormat::operator=( const VertexFormat& source )
 {
 	m_Attributes = source.m_Attributes;
+	return *this;
 }
 
 bool VertexFormat::isValid() const

@@ -119,7 +119,8 @@ Context::Context() :
 	m_Limits(NULL),
 	m_ActiveTextureUnit(-1),
 	m_Textures(NULL),
-	m_Samplers(NULL)
+	m_Samplers(NULL),
+	m_Debug(false)
 {
 }
 
@@ -239,6 +240,79 @@ void Context::bindProgram( const StrongRef<Program>& program )
 const StrongRef<Program>& Context::boundProgram() const
 {
 	return m_Program;
+}
+
+
+/// Debugger ///
+void Context::onDebugEventWrapper(
+	GLenum source,
+	GLenum type,
+	GLuint id,
+	GLenum severity,
+	GLsizei length,
+	const char* message,
+	void* userParam
+)
+{
+	Context* context = reinterpret_cast<Context*>(userParam);
+	context->onDebugEvent(
+		DebugEventSourceFromGL(source),
+		DebugEventTypeFromGL(type),
+		id,
+		DebugEventSeverityFromGL(severity),
+		message
+	);
+}
+
+void Context::enableDebug( bool e )
+{
+	if(e == m_Debug)
+		return;
+	m_Debug = e;
+
+	if(e)
+	{
+		glDebugMessageCallbackARB(Context::onDebugEventWrapper, this);
+	}
+	else
+	{
+		glDebugMessageCallbackARB(NULL, NULL);
+	}
+}
+
+void Context::emitDebugMessage(
+	DebugEventSource source,
+	DebugEventType type,
+	int id,
+	DebugEventSeverity severity,
+	const char* message
+)
+{
+	glDebugMessageInsertARB(
+		ConvertToGL(source),
+		ConvertToGL(type),
+		id,
+		ConvertToGL(severity),
+		std::strlen(message),
+		message
+	);
+}
+
+void Context::onDebugEvent(
+	DebugEventSource source,
+	DebugEventType type,
+	int id,
+	DebugEventSeverity severity,
+	const char* message
+)
+{
+	Log("OpenGL Debug Event [%s %s #%i %s]:\n%s",
+			AsString(source),
+			AsString(type),
+			id,
+			AsString(severity),
+			message
+	);
 }
 
 
