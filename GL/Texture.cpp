@@ -155,19 +155,19 @@ Texture::Texture( Context* context, TextureType type ) :
 	SamplerBase(context),
 	m_Type(type)
 {
-	lock();
+	enterImmortalSection();
 	
 	glGenTextures(1, &m_Handle);
 	
 	setAddressMode(TextureAddressMode_Clamp);
 	setFilter(TextureFilter_Trilinear);
 	
-	// Temporary
-	context->bindTexture(0, this);
-	GLenum typeGL = ConvertToGL(type);
-	glTexParameteri(typeGL, GL_GENERATE_MIPMAP, GL_TRUE);
+	{
+		TextureBinding binding(context, context->activeTextureUnit(), this);
+		glTexParameteri(ConvertToGL(type), GL_GENERATE_MIPMAP, GL_TRUE);
+	}
 	
-	unlock();
+	leaveImmortalSection();
 }
 
 Texture::~Texture()

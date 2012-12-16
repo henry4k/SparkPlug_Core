@@ -8,6 +8,8 @@ namespace SparkPlug
 namespace GL
 {
 	void CheckGl();
+	
+	void DebugMark( const char* msg );
 }
 }
 

@@ -52,9 +52,19 @@ void CheckGl()
 	Error e = (Error)glGetError();
 	if(e != Error_None)
 	{
-		FatalError("%s", (const char*)AsString(e));
+		LogError("%s", (const char*)AsString(e));
+		Break();
 	}
 }
+
+void DebugMark( const char* msg )
+{
+	if(GLEW_GREMEDY_string_marker)
+	{
+		glStringMarkerGREMEDY(0, msg);
+	}
+}
+
 
 }
 }

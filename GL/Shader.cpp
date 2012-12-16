@@ -121,7 +121,8 @@ StrongRef<Shader> Shader::CreateFromFile( Context* context, ShaderType type, con
 
 /// Program ///
 Program::Program( Context* context ) :
-	Object(context)
+	Object(context),
+	m_NeedsUpdate(true)
 {
 	m_Handle = glCreateProgram();
 }
@@ -153,6 +154,7 @@ bool Program::attach( StrongRef<Shader>& object )
 	
 	m_AttachedObjects.insert(object);
 	glAttachShader(m_Handle, object->handle());
+	m_NeedsUpdate = true;
 	return true;
 }
 
@@ -163,6 +165,7 @@ bool Program::detach( StrongRef<Shader>& object )
 	
 	m_AttachedObjects.erase(object);
 	glDetachShader(m_Handle, object->handle());
+	m_NeedsUpdate = true;
 	return true;
 }
 
@@ -196,12 +199,17 @@ bool Program::link()
 // 			return false;
 	}
 	
-	updateUniformLocations();
+	if(m_NeedsUpdate)
+	{
+		readUniformLocations();
+		readAttributeSizes();
+		m_NeedsUpdate = false;
+	}
 	
 	return true;
 }
 
-void Program::updateUniformLocations()
+void Program::readUniformLocations()
 {
 	m_UniformLocations.clear();
 	
@@ -216,13 +224,111 @@ void Program::updateUniformLocations()
 		int size = -1;
 		GLenum type = GL_ZERO;
 		
-		glGetActiveUniform(m_Handle, GLuint(i), sizeof(name)-1, &nameLength, &size, &type, name);
+		glGetActiveUniform(m_Handle, i, sizeof(name)-1, &nameLength, &size, &type, name);
+		assert(nameLength > 0);
 		
-		name[nameLength] = '\0';
 		GLuint location = glGetUniformLocation(m_Handle, name);
 		
 		m_UniformLocations[name] = location;
 	}
+}
+
+void Program::readAttributeSizes()
+{
+	m_AttributeSizes.clear();
+	
+	int attributeCount = -1;
+	glGetProgramiv(m_Handle, GL_OBJECT_ACTIVE_ATTRIBUTES_ARB, &attributeCount);
+	
+	for(int i = 0; i < attributeCount; ++i)
+	{
+		int nameLength = -1;
+		char name[100];
+		int size = -1;
+		GLenum type = GL_ZERO;
+		int normalized = -1;
+		
+		glGetActiveAttrib(
+			m_Handle,
+			i,
+			sizeof(name)-1,
+			&nameLength,
+			&size,
+			&type,
+			name
+		);
+		assert(nameLength > 0);
+		
+		if(nameLength > 3 &&
+			name[0] == 'g' &&
+			name[1] == 'l' &&
+			name[2] == '_')
+			continue; // We are not interested in internal attributes.
+		
+		m_AttributeSizes[name] = size;
+	}
+}
+
+void Program::setAttributes( const VertexFormat& reference )
+{
+	int attributeCount = reference.attributeCount();
+	std::set<std::string> referenceAttributes;
+	
+	// Attribute der Referenz in eine Map schreiben (schneller zugriff über Name)
+	for(int i = 0; i < attributeCount; ++i)
+	{
+		referenceAttributes.insert(reference.attribute(i).name());
+	}
+	
+	// Schauen welche Atribute es im Shader, aber nicht in der Referenz gibt
+	for(std::map<std::string, int>::const_iterator i = m_AttributeSizes.begin(); i != m_AttributeSizes.end(); ++i)
+	{
+		if(referenceAttributes.count(i->first) == 0)
+		{
+			// i ist nicht in reference enthalten!
+			// Das IST schlimm!
+			LogError("Shader %s needs the vertex attribute %s, which the format does not provide.",
+				toString().c_str(),
+				i->first.c_str()
+			);
+			return;
+		}
+	}
+	
+	for(int i = 0; i < attributeCount; ++i)
+	{
+		const VertexAttribute& attribute = reference.attribute(i);
+		std::map<std::string, int>::const_iterator targetSizeIter = m_AttributeSizes.find(attribute.name());
+		
+		if(targetSizeIter == m_AttributeSizes.end())
+		{
+			/*
+			LogWarning("Vertex format %s has overhead to %s, because %s is not present in the shader.",
+				reference.asString().c_str(),
+				toString(),
+				attribute.name()
+			);
+			*/
+			continue;
+		}
+		
+		// Sind sie vielleicht unterschiedlich groß?
+		if(attribute.componentCount() != targetSizeIter->second)
+		{
+			LogError("Vertex format %s is incomplatible to %s, because the shader needs %s to consist of %d instead of %d components.",
+				reference.asString().c_str(),
+				toString().c_str(),
+				attribute.name(),
+				targetSizeIter->second,
+				attribute.componentCount()
+			);
+			return;
+		}
+		
+		glBindAttribLocation(m_Handle, i, attribute.name());
+	}
+	
+	link();
 }
 
 int Program::getUniformLocation( const char* uniformName ) const
@@ -240,7 +346,7 @@ bool Program::setUniform( const char* name, int value )
 	if(location == -1)
 		return false;
 	
-	context()->bindProgram(this);
+	ProgramBinding binding(context(), this);
 	glUniform1i(location, value);
 	return true;
 }
@@ -251,7 +357,7 @@ bool Program::setUniform( const char* name, float value )
 	if(location == -1)
 		return false;
 	
-	context()->bindProgram(this);
+	ProgramBinding binding(context(), this);
 	glUniform1f(location, value);
 	return true;
 }
@@ -262,8 +368,7 @@ bool Program::setUniform( const char* name, int length, const float* values )
 	if(location == -1)
 		return false;
 
-	context()->bindProgram(this);
-	
+	ProgramBinding binding(context(), this);
 	switch(length)
 	{
 		case 1: glUniform1fv(location, 1, values); break;

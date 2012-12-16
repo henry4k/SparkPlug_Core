@@ -44,7 +44,7 @@ void ReferenceCounted::removeListener( ReferenceListener* listener )
 	m_Listeners.erase(listener);
 }
 
-void ReferenceCounted::lock()
+void ReferenceCounted::enterImmortalSection()
 {
 	if(m_StrongReferences > 0)
 		FatalError("Locking reference %u in used state.", this);
@@ -52,7 +52,7 @@ void ReferenceCounted::lock()
 	++m_StrongReferences;
 }
 
-void ReferenceCounted::unlock()
+void ReferenceCounted::leaveImmortalSection()
 {
 	--m_StrongReferences;
 	

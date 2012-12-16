@@ -52,8 +52,8 @@ class ReferenceCounted
 		 * Usefull inside constructor, when it calls functions that create references.
 		 * Dont forget to unlock() the object afterwards.
 		 */
-		void lock();
-		void unlock();
+		void enterImmortalSection();
+		void leaveImmortalSection();
 
 	private:
 		int m_StrongReferences;

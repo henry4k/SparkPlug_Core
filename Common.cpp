@@ -1,8 +1,21 @@
+#ifdef __WIN32__
+	#ifndef WIN32_LEAN_AND_MEAN
+		#define WIN32_LEAN_AND_MEAN
+	#endif
+
+	#ifndef NOGDI
+		#define NOGDI
+	#endif
+	
+	#include <windows.h>
+#else
+	#include <csignal>
+#endif
+
 #include <cstdio>
 #include <cstdlib>
 #include <exception>
 #include <SparkPlug/Common.h>
-
 
 namespace SparkPlug
 {
@@ -43,6 +56,13 @@ char* ScratchPad( int size )
 	return staticBuffer;
 }
 
-
+void Break()
+{
+	#ifdef __WIN32__
+		DebugBreak();
+	#else
+		raise(SIGTRAP);
+	#endif
+}
 
 }

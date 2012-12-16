@@ -12,35 +12,51 @@ namespace GL
 {
 
 
-enum DataType
+enum AttributeType
 {
-	DataType_UInt8,
-	DataType_UInt16,
-	DataType_UInt32,
-	DataType_Float32,
-	DataType_Float64
+	AttributeType_UInt8,
+	AttributeType_NormalizedUInt8,
+	AttributeType_UInt16,
+	AttributeType_NormalizedUInt16,
+	AttributeType_UInt32,
+	AttributeType_NormalizedUInt32,
+	AttributeType_Float32,
+	AttributeType_Float64
 };
-const char* AsString( DataType type );
-GLenum ConvertToGL( DataType type );
-int SizeOf( DataType type );
+const char* AsString( AttributeType type );
+GLenum ConvertToGL( AttributeType type );
+AttributeType AttributeTypeFromGL( GLenum e );
+int SizeOf( AttributeType type );
+bool IsNormalized( AttributeType type );
+char AsChar( AttributeType type );
+AttributeType AttributeTypeByChar( char ch );
 
 
 class VertexAttribute
 {
 public:
-	VertexAttribute( int count, DataType type );
+	VertexAttribute();
+	VertexAttribute( const char* name, int count, AttributeType type );
+	VertexAttribute( const char* def, int length );
+	VertexAttribute( const char* def );
 	virtual ~VertexAttribute();
 	
 	bool operator == ( const VertexAttribute& format ) const;
 	bool operator != ( const VertexAttribute& format ) const;
 	
-	     int componentCount() const;
-	DataType componentType() const;
-	     int sizeInBytes() const;
+	  const char* name() const;
+	          int componentCount() const;
+	AttributeType componentType() const;
+	          int sizeInBytes() const;
+		  
+	std::string asString() const;
 	
 private:
-	int m_Count;
-	DataType m_Type;
+	void setByDef( const char* name, int length );
+	
+	std::string m_Name;
+	        int m_Count;
+	   AttributeType m_Type;
 };
 
 

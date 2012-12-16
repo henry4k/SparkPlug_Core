@@ -114,12 +114,32 @@ ProgramBinding::~ProgramBinding()
 
 
 
+BufferBinding::BufferBinding( Context* context, const StrongRef<Buffer>& buffer ) :
+	m_Context(context),
+	m_Target(buffer->target()),
+	m_Previous(m_Context->boundBuffer(buffer->target()))
+{
+	m_Context->bindBuffer(buffer);
+}
+
+BufferBinding::~BufferBinding()
+{
+	if(m_Previous)
+		m_Context->bindBuffer(m_Previous);
+	else
+		m_Context->unbindBuffer(m_Target);
+}
+
+
+
 /// --- Context ---
 Context::Context() :
 	m_Limits(NULL),
 	m_ActiveTextureUnit(-1),
 	m_Textures(NULL),
 	m_Samplers(NULL),
+	m_Attributes(NULL),
+	m_ActiveAttributes(0),
 	m_Debug(false)
 {
 }
@@ -134,13 +154,44 @@ Context::~Context()
 	
 	if(m_Samplers)
 		delete[] m_Samplers;
+	
+	if(m_Attributes)
+		delete[] m_Attributes;
 }
 
 void Context::postInit()
 {
+	assert(!m_Limits);
+	// Must only be called once!
+	
+	glewExperimental = GL_TRUE; //GL_FALSE;
+	GLenum e = glewInit();
+	if(e != GLEW_OK)
+	{
+		LogWarning("GLEW Error: %s", glewGetErrorString(e));
+	}
+	
 	m_Limits = new Limits(this);
+	
+	Log(
+		"Using OpenGL %s\n"
+		"Vendor: %s\n"
+		"Renderer: %s\n"
+		"GLSL: %s\n"
+		"GLEW: %s\n",
+		
+		glGetString(GL_VERSION),
+		glGetString(GL_VENDOR),
+		glGetString(GL_RENDERER),
+		glGetString(GL_SHADING_LANGUAGE_VERSION),
+		glewGetString(GLEW_VERSION)
+	);
+	
+	enableDebug(true);
+	
 	m_Textures = new StrongRef<Texture>[limits().maxCombinedTextureUnits];
 	m_Samplers = new StrongRef<Sampler>[limits().maxCombinedTextureUnits];
+	m_Attributes = new VertexAttribute[limits().maxVertexAttributes];
 	selectTextureUnit(0); // Cause -1 is illogical and introduces errors with some functions
 }
 
@@ -178,6 +229,7 @@ void Context::bindTexture( int unit, const StrongRef<Texture>& texture )
 	if(!texture)
 	{
 		glBindTexture(ConvertToGL(m_Textures[unit]->type()), 0);
+		glDisable(ConvertToGL(m_Textures[unit]->type()));
 		m_Textures[unit] = NULL;
 	}
 	else
@@ -185,7 +237,9 @@ void Context::bindTexture( int unit, const StrongRef<Texture>& texture )
 		if(!m_Textures[unit] || (m_Textures[unit]->type() != texture->type()))
 		{
 			if(m_Textures[unit])
+			{
 				glDisable(ConvertToGL(m_Textures[unit]->type()));
+			}
 			glEnable(ConvertToGL(texture->type()));
 		}
 		
@@ -243,6 +297,81 @@ const StrongRef<Program>& Context::boundProgram() const
 }
 
 
+/// Buffer ///
+void Context::bindBuffer( const StrongRef<Buffer>& buffer )
+{
+	if(!buffer)
+		FatalError("Can't unbind a buffer with bindBuffer(NULL), use unbindBuffer() instead!");
+	
+	if(buffer == m_Buffers[buffer->target()])
+		return;
+	
+	glBindBufferARB(ConvertToGL(buffer->target()), buffer->handle());
+	m_Buffers[buffer->target()] = buffer;
+}
+
+void Context::unbindBuffer( BufferTarget target )
+{
+	if(!m_Buffers[target])
+		return;
+	
+	glBindBufferARB(ConvertToGL(target), 0);
+	m_Buffers[target] = NULL;
+}
+
+const StrongRef<Buffer>& Context::boundBuffer( BufferTarget target ) const
+{
+	assert(InsideArray(target, BufferTarget_Count));
+	return m_Buffers[target];
+}
+
+
+void Context::setVertexFormat( const VertexFormat& format, void* data )
+{
+	int offset = 0;
+	int formatAttributeCount = format.attributeCount();
+	
+	for(int i = 0; i < formatAttributeCount; ++i)
+	{
+		const VertexAttribute& newAttribute = format.attribute(i);
+		if(m_Attributes[i] != newAttribute)
+		{
+			m_Attributes[i] = newAttribute;
+			
+			if(i >= m_ActiveAttributes)
+			{
+				// Enable ..
+				glEnableVertexAttribArray(i);
+			}
+			
+			// Setup ..
+			glVertexAttribPointer(
+				i, // the identifier
+				newAttribute.componentCount(), // size (i.e. how many elements of type)
+				ConvertToGL(newAttribute.componentType()),  // type
+				IsNormalized(newAttribute.componentType()), // normalize = false (at least for the moment)
+				newAttribute.sizeInBytes(), // stride between each element of this attribute
+				(void*)((long)data+offset) // offset from the beginning
+			);
+		}
+		
+		offset += newAttribute.sizeInBytes();
+	}
+	
+	if(formatAttributeCount < m_ActiveAttributes)
+	{
+		for(int i = formatAttributeCount; i < m_ActiveAttributes; ++i)
+		{
+			// Disable ..
+			glDisableVertexAttribArray(i);
+		}
+	}
+	
+	m_ActiveAttributes = formatAttributeCount;
+}
+
+
+
 /// Debugger ///
 void Context::onDebugEventWrapper(
 	GLenum source,
@@ -269,14 +398,25 @@ void Context::enableDebug( bool e )
 	if(e == m_Debug)
 		return;
 	m_Debug = e;
-
+	
 	if(e)
 	{
-		glDebugMessageCallbackARB(Context::onDebugEventWrapper, this);
+		if(GLEW_ARB_debug_output)
+		{
+			glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+			glDebugMessageCallbackARB(Context::onDebugEventWrapper, this);
+		}
+		else
+		{
+			LogWarning("ARB_debug_output not supported! You won't receive any debug messages your OpenGL driver.");
+		}
 	}
 	else
 	{
-		glDebugMessageCallbackARB(NULL, NULL);
+		if(GLEW_ARB_debug_output)
+		{
+			glDebugMessageCallbackARB(NULL, NULL);
+		}
 	}
 }
 
@@ -288,6 +428,8 @@ void Context::emitDebugMessage(
 	const char* message
 )
 {
+	FatalError("emitDebugMessage() does not work properly.");
+	
 	glDebugMessageInsertARB(
 		ConvertToGL(source),
 		ConvertToGL(type),
@@ -313,6 +455,7 @@ void Context::onDebugEvent(
 			AsString(severity),
 			message
 	);
+	Break();
 }
 
 

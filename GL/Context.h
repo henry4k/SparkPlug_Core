@@ -8,6 +8,7 @@
 #include <SparkPlug/GL/Texture.h>
 #include <SparkPlug/GL/Sampler.h>
 #include <SparkPlug/GL/Shader.h>
+#include <SparkPlug/GL/Buffer.h>
 
 
 namespace SparkPlug
@@ -42,6 +43,7 @@ class Limits
 		
 		Context* m_Context;
 };
+
 
 class TextureBinding
 {
@@ -78,6 +80,19 @@ class ProgramBinding
 		StrongRef<Program> m_Previous;
 };
 
+class BufferBinding
+{
+	public:
+		BufferBinding( Context* context, const StrongRef<Buffer>& buffer );
+		virtual ~BufferBinding();
+	
+	private:
+		Context*           m_Context;
+		BufferTarget       m_Target;
+		StrongRef<Buffer>  m_Previous;
+};
+
+
 class Context
 {
 	public:
@@ -95,17 +110,15 @@ class Context
 		
  		void bindProgram( const StrongRef<Program>& program );
  		const StrongRef<Program>& boundProgram() const;
-
-
+		
+		void bindBuffer( const StrongRef<Buffer>& buffer );
+		void unbindBuffer( BufferTarget target );
+		const StrongRef<Buffer>& boundBuffer( BufferTarget target ) const;
+		
+		void setVertexFormat( const VertexFormat& format, void* data );
+		
+		
 		void enableDebug( bool e );
-
-		void emitDebugMessage(
-			DebugEventSource source,
-			DebugEventType type,
-			int id,
-			DebugEventSeverity severity,
-			const char* message
-		);
 	
 	protected:
 		Context();
@@ -129,9 +142,12 @@ class Context
 		void selectTextureUnit( int unit );
 		StrongRef<Texture>* m_Textures; // Length is limits().maxTextureUnits
 		StrongRef<Sampler>* m_Samplers; // Length is limits().maxTextureUnits
-
  		StrongRef<Program> m_Program;
-
+ 		StrongRef<Buffer> m_Buffers[BufferTarget_Count];
+		
+		VertexAttribute* m_Attributes; // Length is limits().maxVertexAttributes
+		int m_ActiveAttributes;
+		
 
 		static void onDebugEventWrapper(
 			GLenum source,
@@ -141,6 +157,14 @@ class Context
 			GLsizei length,
 			const char* message,
 			void* userParam
+		);
+		
+		void emitDebugMessage(
+			DebugEventSource source,
+			DebugEventType type,
+			int id,
+			DebugEventSeverity severity,
+			const char* message
 		);
 
 

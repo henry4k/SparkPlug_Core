@@ -27,14 +27,14 @@ const char* AsString( PrimitiveType type );
 GLenum ConvertToGL( PrimitiveType type );
 
 
-enum BufferLockMode
+enum BufferMapMode
 {
-	BufferLockMode_ReadOnly,
-	BufferLockMode_WriteOnly,
-	BufferLockMode_ReadWrite
+	BufferMapMode_ReadOnly,
+	BufferMapMode_WriteOnly,
+	BufferMapMode_ReadWrite
 };
-const char* AsString( BufferLockMode type );
-GLenum ConvertToGL( BufferLockMode type );
+const char* AsString( BufferMapMode type );
+GLenum ConvertToGL( BufferMapMode type );
 
 /**
  * Usage hints
@@ -54,7 +54,8 @@ enum BufferTarget
 	BufferTarget_Vertex,
 	BufferTarget_Index,
 	BufferTarget_PixelPacker,
-	BufferTarget_PixelUnpacker
+	BufferTarget_PixelUnpacker,
+	BufferTarget_Count
 };
 const char* AsString( BufferTarget type );
 GLenum ConvertToGL( BufferTarget type );
@@ -80,8 +81,8 @@ public:
 	bool isReady() const;
 	BufferTarget target() const;
 	
-	void* lock( BufferLockMode type );
-	void unlock();
+	void* map( BufferMapMode type );
+	void unmap();
 
 	void copyFrom( const void* source, int count, int start = 0 );
 	void copyTo( void* destination, int count, int start = 0 );
@@ -98,7 +99,7 @@ private:
 	BufferUsage m_Usage;
 	int m_Count;
 	int m_ElementSize;
-	bool m_Locked;
+	bool m_Mapped;
 };
 
 

@@ -1,3 +1,4 @@
+#include <SparkPlug/GL/Context.h>
 #include <SparkPlug/GL/Buffer.h>
 
 namespace SparkPlug
@@ -53,31 +54,31 @@ GLenum ConvertToGL( PrimitiveType type )
 }
 
 
-/// ----- BufferLockMode ------
+/// ----- BufferMapMode ------
 
-const char* AsString( BufferLockMode type )
+const char* AsString( BufferMapMode type )
 {
 	switch(type)
 	{
-		case BufferLockMode_ReadOnly:
+		case BufferMapMode_ReadOnly:
 			return "ReadOnly";
-		case BufferLockMode_WriteOnly:
+		case BufferMapMode_WriteOnly:
 			return "WriteOnly";
-		case BufferLockMode_ReadWrite:
+		case BufferMapMode_ReadWrite:
 			return "ReadWrite";
 	}
-	return "UnknownBufferLockMode";
+	return "UnknownBufferMapMode";
 }
 
-GLenum ConvertToGL( BufferLockMode type )
+GLenum ConvertToGL( BufferMapMode type )
 {
 	switch(type)
 	{
-		case BufferLockMode_ReadOnly:
+		case BufferMapMode_ReadOnly:
 			return GL_READ_ONLY_ARB;
-		case BufferLockMode_WriteOnly:
+		case BufferMapMode_WriteOnly:
 			return GL_WRITE_ONLY_ARB;
-		case BufferLockMode_ReadWrite:
+		case BufferMapMode_ReadWrite:
 			return GL_READ_WRITE_ARB;
 	}
 	FatalError("Invalid buffer lock mode: %u", type);
@@ -118,7 +119,7 @@ GLenum ConvertToGL( BufferUsage type )
 
 
 
-/// ----- BufferUsage ------
+/// ----- BufferTarget ------
 
 const char* AsString( BufferTarget type )
 {
@@ -132,6 +133,7 @@ const char* AsString( BufferTarget type )
 			return "PixelPacker";
 		case BufferTarget_PixelUnpacker:
 			return "PixelUnpacker";
+		default: ;
 	}
 	return "UnknownBufferTarget";
 }
@@ -148,6 +150,7 @@ GLenum ConvertToGL( BufferTarget type )
 			return GL_PIXEL_PACK_BUFFER_ARB;
 		case BufferTarget_PixelUnpacker:
 			return GL_PIXEL_UNPACK_BUFFER_ARB;
+		default: ;
 	}
 	FatalError("Invalid buffer target: %u", type);
 	return 0;
@@ -210,15 +213,18 @@ Buffer::Buffer( Context* context, BufferTarget target, BufferUsage usage, int co
 	m_Usage(usage),
 	m_Count(count),
 	m_ElementSize(elementSize),
-	m_Locked(false)
+	m_Mapped(false)
 {
-	glGenBuffersARB(1, &m_Handle);
-	CheckGl();
+	enterImmortalSection();
 	
-	// bind()
-	glBufferDataARB(ConvertToGL(m_Target), size(), NULL, ConvertToGL(m_Usage));
-
-	CheckGl();
+	glGenBuffersARB(1, &m_Handle);
+	
+	{
+		BufferBinding binding(context, this);
+		glBufferDataARB(ConvertToGL(m_Target), size(), NULL, ConvertToGL(m_Usage));
+	}
+	
+	leaveImmortalSection();
 }
 
 Buffer::~Buffer()
@@ -243,33 +249,35 @@ BufferTarget Buffer::target() const
 	return m_Target;
 }
 
-void* Buffer::lock( BufferLockMode type )
+void* Buffer::map( BufferMapMode type )
 {
-	assert(m_Locked == true);
-	// bind()
-	void* p = glMapBuffer(target(), ConvertToGL(type));
+	assert(m_Mapped == false);
+	
+	BufferBinding binding(context(), this);
+	void* p = glMapBufferARB(ConvertToGL(target()), ConvertToGL(type));
 	assert(p);
-
-	m_Locked = true;
+	
+	m_Mapped = true;
 	return p;
 }
 
-void Buffer::unlock()
+void Buffer::unmap()
 {
-	assert(m_Locked == false);
+	assert(m_Mapped == true);
 	
-	// bind()
-	if(!glUnmapBuffer(target()))
+	BufferBinding binding(context(), this);
+	if(!glUnmapBufferARB( ConvertToGL(target()) ))
 		LogWarning("glUnmapBuffer failed ...");
 	
-	m_Locked = false;
+	m_Mapped = false;
 }
 
 void Buffer::copyFrom( const void* source, int count, int start )
 {
-	assert(m_Locked);
+	assert(m_Mapped);
 	assert(start+count <= m_Count);
-	// bind()
+	
+	BufferBinding binding(context(), this);
 	glBufferSubDataARB(target(), start*elementSize(), count*elementSize(), source);
 
 	CheckGl();
@@ -277,9 +285,10 @@ void Buffer::copyFrom( const void* source, int count, int start )
 
 void Buffer::copyTo( void* destination, int count, int start )
 {
-	assert(m_Locked);
+	assert(m_Mapped);
 	assert(start+count <= m_Count);
-	// bind()
+	
+	BufferBinding binding(context(), this);
 	glGetBufferSubDataARB(target(), start*elementSize(), count*elementSize(), destination);
 
 	CheckGl();

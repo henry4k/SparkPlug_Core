@@ -19,6 +19,14 @@ std::string FormatV( const char* format, std::va_list& vl );
 
 char* ScratchPad( int size );
 
+
+/**
+ * When a debugger is attached to the application,
+ * this will send a breakpoint signal to it.
+ * Else the application will simply tear down.
+ */
+void Break();
+
 }
 
 #endif

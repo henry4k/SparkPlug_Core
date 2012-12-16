@@ -9,6 +9,7 @@
 #include <SparkPlug/GL/OpenGL.h>
 #include <SparkPlug/GL/Enums.h>
 #include <SparkPlug/GL/Object.h>
+#include <SparkPlug/GL/VertexFormat.h>
 
 namespace SparkPlug
 {
@@ -42,6 +43,8 @@ public:
 	
 	bool link();
 	
+	void setAttributes( const VertexFormat& reference );
+	
 	bool setUniform( const char* name, int value );
 	bool setUniform( const char* name, float value );
 	bool setUniform( const char* name, int length, const float* value );
@@ -50,11 +53,15 @@ private:
 	Program( Context* context );
 	
 	void clear();
-	void updateUniformLocations();
+	void readUniformLocations();
 	int getUniformLocation( const char* uniformName ) const;
 	
+	void readAttributeSizes();
+	
+	bool m_NeedsUpdate;
 	std::set< StrongRef<Shader> > m_AttachedObjects;
 	std::map<std::string, int>    m_UniformLocations;
+	std::map<std::string, int>    m_AttributeSizes;
 };
 
 
