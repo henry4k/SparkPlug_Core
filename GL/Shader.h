@@ -42,6 +42,9 @@ public:
 	bool detach( StrongRef<Shader>& object );
 	
 	bool link();
+	bool linkSilent();
+	bool validate();
+	bool validateSilent();
 	
 	void setAttributes( const VertexFormat& reference );
 	
@@ -58,7 +61,8 @@ private:
 	
 	void readAttributeSizes();
 	
-	bool m_NeedsUpdate;
+	bool m_Dirty;
+	
 	std::set< StrongRef<Shader> > m_AttachedObjects;
 	std::map<std::string, int>    m_UniformLocations;
 	std::map<std::string, int>    m_AttributeSizes;

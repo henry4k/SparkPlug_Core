@@ -122,7 +122,7 @@ StrongRef<Shader> Shader::CreateFromFile( Context* context, ShaderType type, con
 /// Program ///
 Program::Program( Context* context ) :
 	Object(context),
-	m_NeedsUpdate(true)
+	m_Dirty(true)
 {
 	m_Handle = glCreateProgram();
 }
@@ -154,7 +154,7 @@ bool Program::attach( StrongRef<Shader>& object )
 	
 	m_AttachedObjects.insert(object);
 	glAttachShader(m_Handle, object->handle());
-	m_NeedsUpdate = true;
+	m_Dirty = true;
 	return true;
 }
 
@@ -165,48 +165,53 @@ bool Program::detach( StrongRef<Shader>& object )
 	
 	m_AttachedObjects.erase(object);
 	glDetachShader(m_Handle, object->handle());
-	m_NeedsUpdate = true;
+	m_Dirty = true;
 	return true;
 }
 
 bool Program::link()
 {
+	bool r = linkSilent();
+	ShowProgramLog(m_Handle);
+	if(r)
+		Log("Linked shader program %s successfully ", toString().c_str());
+	else
+		LogError("Error linking shader program %s", toString().c_str());
+	return r;
+}
+
+bool Program::linkSilent()
+{
+	if(!m_Dirty)
+		return true;
+	
 	glLinkProgram(m_Handle);
-	{
-		GLint state;
-		glGetProgramiv(m_Handle, GL_LINK_STATUS, &state);
-		ShowProgramLog(m_Handle);
-		if(state)
-			Log("Linked shader program %s successfully ", toString().c_str());
-		else
-			LogError("Error linking shader program %s", toString().c_str());
-		
-		if(!state)
-			return false;
-	}
+	GLint state;
+	glGetProgramiv(m_Handle, GL_LINK_STATUS, &state);
+	readUniformLocations();
+	readAttributeSizes();
 	
+	m_Dirty = (state == 0);
+	return state != 0;
+}
+
+bool Program::validate()
+{
+	bool r = validateSilent();
+	ShowProgramLog(m_Handle);
+	if(r)
+		Log("Validated shader program successfully %s", toString().c_str());
+	else
+		Log("Error validating shader program %s", toString().c_str());
+	return r;
+}
+
+bool Program::validateSilent()
+{
 	glValidateProgram(m_Handle);
-	{
-		GLint state;
-		glGetProgramiv(m_Handle, GL_VALIDATE_STATUS, &state);
-		ShowProgramLog(m_Handle);
-		if(state)
-			Log("Validated shader program successfully %s", toString().c_str());
-		else
-			Log("Error validating shader program %s", toString().c_str());
-		
-// 		if(!state)
-// 			return false;
-	}
-	
-	if(m_NeedsUpdate)
-	{
-		readUniformLocations();
-		readAttributeSizes();
-		m_NeedsUpdate = false;
-	}
-	
-	return true;
+	GLint state;
+	glGetProgramiv(m_Handle, GL_VALIDATE_STATUS, &state);
+	return state != 0;
 }
 
 void Program::readUniformLocations()
@@ -259,6 +264,12 @@ void Program::readAttributeSizes()
 		);
 		assert(nameLength > 0);
 		
+		Log("Attribute %s: %d x %s",
+			name,
+			size,
+			AsString(AttributeTypeFromGL(type, false))
+		);
+		
 		if(nameLength > 3 &&
 			name[0] == 'g' &&
 			name[1] == 'l' &&
@@ -302,13 +313,11 @@ void Program::setAttributes( const VertexFormat& reference )
 		
 		if(targetSizeIter == m_AttributeSizes.end())
 		{
-			/*
-			LogWarning("Vertex format %s has overhead to %s, because %s is not present in the shader.",
+			Log("Vertex format %s has overhead to %s, because %s is not present in the shader.",
 				reference.asString().c_str(),
-				toString(),
+				toString().c_str(),
 				attribute.name()
 			);
-			*/
 			continue;
 		}
 		
@@ -326,9 +335,10 @@ void Program::setAttributes( const VertexFormat& reference )
 		}
 		
 		glBindAttribLocation(m_Handle, i, attribute.name());
+		m_Dirty = true;
 	}
 	
-	link();
+	linkSilent();
 }
 
 int Program::getUniformLocation( const char* uniformName ) const

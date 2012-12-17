@@ -25,7 +25,7 @@ enum AttributeType
 };
 const char* AsString( AttributeType type );
 GLenum ConvertToGL( AttributeType type );
-AttributeType AttributeTypeFromGL( GLenum e );
+AttributeType AttributeTypeFromGL( GLenum e, bool normalized );
 int SizeOf( AttributeType type );
 bool IsNormalized( AttributeType type );
 char AsChar( AttributeType type );

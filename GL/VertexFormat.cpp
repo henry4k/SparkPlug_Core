@@ -1,3 +1,4 @@
+#include <cctype>
 #include <cstring>
 #include <SparkPlug/GL/VertexFormat.h>
 
@@ -6,6 +7,18 @@ namespace SparkPlug
 {
 namespace GL
 {
+
+
+
+
+struct ValueInfo
+{
+	DataType type;
+	bool normalized;
+	int components;
+};
+
+
 
 /// ---- AttributeType ----
 
@@ -57,6 +70,31 @@ GLenum ConvertToGL( AttributeType type )
 	}
 	FatalError("Invalid attribute type: %u", type);
 	return 0;
+}
+
+AttributeType AttributeTypeFromGL( GLenum e, bool normalized, int* countOut )
+{
+	int dummy = 0;
+	if(countOut == NULL)
+		countOut = &dummy;
+	
+	switch(e)
+	{
+		case GL_UNSIGNED_INT: *countOut = 1; return AttributeType_Float32;
+		case GL_DOUBLE:       *countOut = 1; return AttributeType_Float64;
+		
+		case GL_FLOAT:           *countOut = 1; return AttributeType_Float32;
+		case GL_FLOAT_VEC2_ARB:  *countOut = 2; return AttributeType_Float32;
+		case GL_FLOAT_VEC3_ARB:  *countOut = 3; return AttributeType_Float32;
+		case GL_FLOAT_VEC4_ARB:  *countOut = 4; return AttributeType_Float32;
+		
+		case GL_FLOAT_VEC2_ARB:  *countOut = 2; return AttributeType_Float32;
+		case GL_DOUBLE_VEC2_ARB: *countOut = 2; return AttributeType_Float64;
+		case GL_DOUBLE: return AttributeType_Float64;
+		default: ;
+	}
+	FatalError("Invalid gl attribute type: %u", e);
+	return AttributeType_Float32;
 }
 
 AttributeType AttributeTypeFromGL( GLenum e, bool normalized )
@@ -283,18 +321,33 @@ VertexFormat::VertexFormat( const char* def )
 {
 	int begin = 0;
 	int i = 0;
+	bool wasSpace = true;
+	
 	for(; def[i] != '\0'; ++i)
 	{
 		char ch = def[i];
-		if(ch != ' ')
-			continue;
+		bool isSpace = std::isspace(ch);
 		
+		// Wechsel von WS
+		if(wasSpace && !isSpace)
+		{
+			begin = i;
+		}
+		// Wechsel zu WS
+		else if(!wasSpace && isSpace)
+		{
+			assert((i-begin) >= 0);
+			appendAttribute(VertexAttribute(&def[begin], i-begin));
+			begin = -1;
+		}
+		
+		wasSpace = isSpace;
+	}
+	if(begin >= 0)
+	{
 		assert((i-begin) >= 0);
 		appendAttribute(VertexAttribute(&def[begin], i-begin));
-		begin = i;
 	}
-	assert((i-begin) >= 0);
-	appendAttribute(VertexAttribute(&def[begin], i-begin));
 }
 
 VertexFormat::VertexFormat( const VertexFormat& source ) :
