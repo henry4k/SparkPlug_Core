@@ -26,7 +26,8 @@ public:
 	bool operator != ( const VertexAttribute& format ) const;
 	
 	const char* name() const;
-	const DataType& componentType() const;
+	const DataType& dataType() const;
+	bool isNormalized() const;
 	
 	std::string asString() const;
 	
@@ -35,7 +36,7 @@ private:
 	
 	std::string m_Name;
 	   DataType m_Type;
-	       bool m_Normalize;
+	       bool m_Normalized;
 };
 
 

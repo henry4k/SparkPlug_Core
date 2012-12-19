@@ -8,30 +8,30 @@ namespace SparkPlug
 namespace GL
 {
 
-enum PrimitveType
+enum PrimitiveDataType
 {
-	PrimitveType_Bool,
-	PrimitveType_Byte,
-	PrimitveType_UByte,
-	PrimitveType_Short,
-	PrimitveType_UShort,
-	PrimitveType_Int,
-	PrimitveType_UInt,
-	PrimitveType_Float,
-	PrimitveType_Double
+	PrimitiveDataType_Bool,
+	PrimitiveDataType_Byte,
+	PrimitiveDataType_UByte,
+	PrimitiveDataType_Short,
+	PrimitiveDataType_UShort,
+	PrimitiveDataType_Int,
+	PrimitiveDataType_UInt,
+	PrimitiveDataType_Float,
+	PrimitiveDataType_Double
 };
-const char* AsString( PrimitveType type );
-GLenum ConvertToGL( PrimitveType type );
-PrimitveType PrimitveTypeFromGL( GLenum e );
-int SizeOf( PrimitveType type );
+const char* AsString( PrimitiveDataType type );
+GLenum ConvertToGL( PrimitiveDataType type );
+PrimitiveDataType PrimitiveDataTypeFromGL( GLenum e );
+int SizeOf( PrimitiveDataType type );
 
-enum CompositeType
+enum CompositeDataType
 {
-	CompositeType_None,
-	CompositeType_Vector,
-	CompositeType_Matrix
+	CompositeDataType_None,
+	CompositeDataType_Vector,
+	CompositeDataType_Matrix
 };
-const char* AsString( CompositeType type );
+const char* AsString( CompositeDataType type );
 
 class DataType
 {
@@ -40,10 +40,10 @@ public:
 	DataType( GLenum e );
 	DataType( const char* def );
 	DataType( const char* def, int length );
-	DataType( PrimitveType primitive, CompositeType composite, int compositeSize );
+	DataType( PrimitiveDataType primitive, CompositeDataType composite, int compositeSize );
 	
-	 PrimitveType primitveType() const;
-	CompositeType compositeType() const;
+	PrimitiveDataType primitveType() const;
+	CompositeDataType compositeType() const;
 	
 	int compositeSize() const;
 	int componentCount() const;
@@ -56,9 +56,12 @@ public:
 	bool operator != ( const DataType& other ) const;
 	
 private:
-	 PrimitveType m_PrimitiveType;
-	CompositeType m_CompositeType;
-	          int m_CompositeSize;
+	void set( PrimitiveDataType primitive, CompositeDataType composite, int compositeSize );
+	void setByDef( const char* def, int length );
+	
+	PrimitiveDataType m_PrimitiveDataType;
+	CompositeDataType m_CompositeDataType;
+	              int m_CompositeSize;
 };
 
 }

@@ -18,7 +18,7 @@ VertexAttribute::VertexAttribute()
 VertexAttribute::VertexAttribute( const char* name, const DataType& type, bool normalize ) :
 	m_Name(name),
 	m_Type(type),
-	m_Normalize(normalize)
+	m_Normalized(normalize)
 {
 }
 
@@ -42,7 +42,7 @@ void VertexAttribute::setByDef( const char* def, int length )
 	std::vector<char> buf;
 	DataType type;
 	
-	m_Normalize = false;
+	m_Normalized = false;
 	int mode = 0;
 	
 	for(int i = 0; i < length; ++i)
@@ -68,15 +68,17 @@ void VertexAttribute::setByDef( const char* def, int length )
 			{
 				if(ch == 'n' && buf.size() == 0)
 				{
-					m_Normalize = true;
-				}
-				else if(i == length-1)
-				{
-					m_Type = DataType(buf.data(), buf.size());
-					break;
+					m_Normalized = true;
 				}
 				else
+				{
 					buf.push_back(ch);
+					if(i == length-1)
+					{
+						m_Type = DataType(buf.data(), buf.size());
+						break;
+					}
+				}
 			} break;
 			
 			default:
@@ -90,7 +92,7 @@ bool VertexAttribute::operator == ( const VertexAttribute& format ) const
 	return
 		(m_Name == format.m_Name) &&
 		(m_Type == format.m_Type) &&
-		(m_Normalize == format.m_Normalize);
+		(m_Normalized == format.m_Normalized);
 }
 
 bool VertexAttribute::operator != ( const VertexAttribute& format ) const
@@ -103,15 +105,20 @@ const char* VertexAttribute::name() const
 	return m_Name.c_str();
 }
 
-const DataType& VertexAttribute::componentType() const
+const DataType& VertexAttribute::dataType() const
 {
 	return m_Type;
+}
+
+bool VertexAttribute::isNormalized() const
+{
+	return m_Normalized;
 }
 
 std::string VertexAttribute::asString() const
 {
 	std::string buf = m_Name+":";
-	if(m_Normalize)
+	if(m_Normalized)
 		buf += "n";
 	return buf+m_Type.toString();
 }
@@ -202,7 +209,7 @@ int VertexFormat::sizeInBytes() const
 	int bytes = 0;
 	std::vector<VertexAttribute>::const_iterator i = m_Attributes.begin();
 	for(; i != m_Attributes.end(); ++i)
-		bytes += i->sizeInBytes();
+		bytes += i->dataType().sizeInBytes();
 	return bytes;
 }
 
@@ -222,13 +229,13 @@ std::string VertexFormat::asString() const
 }
 
 
-const VertexFormat VertexFormat::V3      ("Position:3f");
-const VertexFormat VertexFormat::V3N3    ("Position:3f Normal:3f");
-const VertexFormat VertexFormat::V3N3T2  ("Position:3f Normal:3f TexCoord:2f");
-const VertexFormat VertexFormat::V3T2    ("Position:3f TexCoord:2f");
-const VertexFormat VertexFormat::V3C4    ("Position:3f Color:4f");
-const VertexFormat VertexFormat::V3N3C4  ("Position:3f Normal:3f Color:4f");
-const VertexFormat VertexFormat::V3N3T2C4("Position:3f Normal:3f TexCoord:2f Color:4f");
+const VertexFormat VertexFormat::V3      ("Position:vec3f");
+const VertexFormat VertexFormat::V3N3    ("Position:vec3f Normal:vec3f");
+const VertexFormat VertexFormat::V3N3T2  ("Position:vec3f Normal:vec3f TexCoord:vec2f");
+const VertexFormat VertexFormat::V3T2    ("Position:vec3f TexCoord:vec2f");
+const VertexFormat VertexFormat::V3C4    ("Position:vec3f Color:vec4f");
+const VertexFormat VertexFormat::V3N3C4  ("Position:vec3f Normal:vec3f Color:vec4f");
+const VertexFormat VertexFormat::V3N3T2C4("Position:vec3f Normal:vec3f TexCoord:vec2f Color:vec4f");
 
 
 

@@ -1,4 +1,5 @@
 #include <cstring>
+#include <vector>
 #include <SparkPlug/Common.h>
 #include <SparkPlug/GL/DataType.h>
 
@@ -7,208 +8,211 @@ namespace SparkPlug
 namespace GL
 {
 
-/// ---- PrimitiveType ----
+/// ---- PrimitiveDataType ----
 
-const char* AsString( PrimitveType type )
+const char* AsString( PrimitiveDataType type )
 {
 	switch(type)
 	{
-		case PrimitveType_Bool:   return "bool";
-		case PrimitveType_Byte:   return "byte";
-		case PrimitveType_UByte:  return "ubyte";
-		case PrimitveType_Short:  return "short";
-		case PrimitveType_UShort: return "ushort";
-		case PrimitveType_Int:    return "int";
-		case PrimitveType_UInt:   return "uint";
-		case PrimitveType_Float:  return "float";
-		case PrimitveType_Double: return "double";
+		case PrimitiveDataType_Bool:   return "bool";
+		case PrimitiveDataType_Byte:   return "byte";
+		case PrimitiveDataType_UByte:  return "ubyte";
+		case PrimitiveDataType_Short:  return "short";
+		case PrimitiveDataType_UShort: return "ushort";
+		case PrimitiveDataType_Int:    return "int";
+		case PrimitiveDataType_UInt:   return "uint";
+		case PrimitiveDataType_Float:  return "float";
+		case PrimitiveDataType_Double: return "double";
 		default: ;
 	}
-	return "UnknownPrimitiveType";
+	return "UnknownPrimitiveDataType";
 }
 
-char ToDefinitionChar( PrimitiveType type )
+char ToDefinitionChar( PrimitiveDataType type )
 {
 	switch(type)
 	{
-		case PrimitveType_Bool:   return '?';
-		case PrimitveType_Byte:   return 'b';
-		case PrimitveType_UByte:  return 'B';
-		case PrimitveType_Short:  return 's';
-		case PrimitveType_UShort: return 'S';
-		case PrimitveType_Int:    return 'i';
-		case PrimitveType_UInt:   return 'I';
-		case PrimitveType_Float:  return 'f';
-		case PrimitveType_Double: return 'd';
+		case PrimitiveDataType_Bool:   return '?';
+		case PrimitiveDataType_Byte:   return 'b';
+		case PrimitiveDataType_UByte:  return 'B';
+		case PrimitiveDataType_Short:  return 's';
+		case PrimitiveDataType_UShort: return 'S';
+		case PrimitiveDataType_Int:    return 'i';
+		case PrimitiveDataType_UInt:   return 'I';
+		case PrimitiveDataType_Float:  return 'f';
+		case PrimitiveDataType_Double: return 'd';
 		default: ;
 	}
-	return "UnknownPrimitiveType";
+	FatalError("Invalid primitve type %u", type);
+	return 'E';
 }
 
-GLenum ConvertToGL( PrimitveType type )
+GLenum ConvertToGL( PrimitiveDataType type )
 {
 	switch(type)
 	{
-		case PrimitveType_Bool:   return GL_BOOL;
-		case PrimitveType_Byte:   return GL_BYTE;
-		case PrimitveType_UByte:  return GL_UNSIGNED_BYTE;
-		case PrimitveType_Short:  return GL_SHORT;
-		case PrimitveType_UShort: return GL_UNSIGNED_SHORT;
-		case PrimitveType_Int:    return GL_INT;
-		case PrimitveType_UInt:   return GL_UNSIGNED_INT;
-		case PrimitveType_Float:  return GL_FLOAT;
-		case PrimitveType_Double: return GL_DOUBLE;
+		case PrimitiveDataType_Bool:   return GL_BOOL;
+		case PrimitiveDataType_Byte:   return GL_BYTE;
+		case PrimitiveDataType_UByte:  return GL_UNSIGNED_BYTE;
+		case PrimitiveDataType_Short:  return GL_SHORT;
+		case PrimitiveDataType_UShort: return GL_UNSIGNED_SHORT;
+		case PrimitiveDataType_Int:    return GL_INT;
+		case PrimitiveDataType_UInt:   return GL_UNSIGNED_INT;
+		case PrimitiveDataType_Float:  return GL_FLOAT;
+		case PrimitiveDataType_Double: return GL_DOUBLE;
 		default: ;
 	}
 	FatalError("Invalid primitve type %u", type);
 	return 0;
 }
 
-PrimitveType PrimitveTypeFromGL( GLenum e )
+PrimitiveDataType PrimitiveDataTypeFromGL( GLenum e )
 {
-	switch(type)
+	switch(e)
 	{
-		case GL_BOOL:           return PrimitveType_Bool;
-		case GL_BYTE:           return PrimitveType_Byte;
-		case GL_UNSIGNED_BYTE:  return PrimitveType_UByte;
-		case GL_SHORT:          return PrimitveType_Short;
-		case GL_UNSIGNED_SHORT: return PrimitveType_UShort;
-		case GL_INT:            return PrimitveType_Int;
-		case GL_UNSIGNED_INT:   return PrimitveType_UInt;
-		case GL_FLOAT:          return PrimitveType_Float;
-		case GL_DOUBLE:         return PrimitveType_Double;
+		case GL_BOOL:           return PrimitiveDataType_Bool;
+		case GL_BYTE:           return PrimitiveDataType_Byte;
+		case GL_UNSIGNED_BYTE:  return PrimitiveDataType_UByte;
+		case GL_SHORT:          return PrimitiveDataType_Short;
+		case GL_UNSIGNED_SHORT: return PrimitiveDataType_UShort;
+		case GL_INT:            return PrimitiveDataType_Int;
+		case GL_UNSIGNED_INT:   return PrimitiveDataType_UInt;
+		case GL_FLOAT:          return PrimitiveDataType_Float;
+		case GL_DOUBLE:         return PrimitiveDataType_Double;
 		default: ;
 	}
-	FatalError("Invalid gl primitve type %u", type);
-	return PrimitveType_Bool;
+	FatalError("Invalid gl primitve type %u", e);
+	return PrimitiveDataType_Bool;
 }
 
-int SizeOf( PrimitveType type )
+int SizeOf( PrimitiveDataType type )
 {
 	switch(type)
 	{
-		case PrimitveType_Bool:   return sizeof(GLboolean);
-		case PrimitveType_Byte:   return sizeof(GLbyte);
-		case PrimitveType_UByte:  return sizeof(GLubyte);
-		case PrimitveType_Short:  return sizeof(GLshort);
-		case PrimitveType_UShort: return sizeof(GLushort);
-		case PrimitveType_Int:    return sizeof(GLint);
-		case PrimitveType_UInt:   return sizeof(GLuint);
-		case PrimitveType_Float:  return sizeof(GLfloat);
-		case PrimitveType_Double: return sizeof(GLdouble);
+		case PrimitiveDataType_Bool:   return sizeof(GLboolean);
+		case PrimitiveDataType_Byte:   return sizeof(GLbyte);
+		case PrimitiveDataType_UByte:  return sizeof(GLubyte);
+		case PrimitiveDataType_Short:  return sizeof(GLshort);
+		case PrimitiveDataType_UShort: return sizeof(GLushort);
+		case PrimitiveDataType_Int:    return sizeof(GLint);
+		case PrimitiveDataType_UInt:   return sizeof(GLuint);
+		case PrimitiveDataType_Float:  return sizeof(GLfloat);
+		case PrimitiveDataType_Double: return sizeof(GLdouble);
 		default: ;
 	}
 	FatalError("Invalid primitve type: %u", type);
 	return 1;
 }
 
-PrimitveType PrimitveTypeByChar( char ch )
+PrimitiveDataType PrimitiveDataTypeByChar( char ch )
 {
 	switch(ch)
 	{
-		case '?': return PrimitveType_Bool;
-		case 'b': return PrimitveType_Byte;
-		case 'B': return PrimitveType_UByte;
-		case 's': return PrimitveType_Short;
-		case 'S': return PrimitveType_UShort;
-		case 'i': return PrimitveType_Int;
-		case 'I': return PrimitveType_UInt;
-		case 'f': return PrimitveType_Float;
-		case 'd': return PrimitveType_Double;
+		case '?': return PrimitiveDataType_Bool;
+		case 'b': return PrimitiveDataType_Byte;
+		case 'B': return PrimitiveDataType_UByte;
+		case 's': return PrimitiveDataType_Short;
+		case 'S': return PrimitiveDataType_UShort;
+		case 'i': return PrimitiveDataType_Int;
+		case 'I': return PrimitiveDataType_UInt;
+		case 'f': return PrimitiveDataType_Float;
+		case 'd': return PrimitiveDataType_Double;
 		default: ;
 	}
 	FatalError("%c does not map to a primitive type!", ch);
-	return PrimitveType_Bool;
+	return PrimitiveDataType_Bool;
 }
 
 
-/// ---- CompositeType ----
+/// ---- CompositeDataType ----
 
-const char* AsString( CompositeType type )
+const char* AsString( CompositeDataType type )
 {
 	switch(type)
 	{
-		case CompositeType_None:   return "none";
-		case CompositeType_Vector: return "vector";
-		case CompositeType_Matrix: return "matrix";
+		case CompositeDataType_None:   return "none";
+		case CompositeDataType_Vector: return "vector";
+		case CompositeDataType_Matrix: return "matrix";
 		default: ;
 	}
-	return "UnknownCompositeType";
+	return "UnknownCompositeDataType";
 }
 
-CompositeType CompositeTypeByDefString( const std::string& s )
+CompositeDataType CompositeDataTypeByDefString( const std::string& s )
 {
 	if(s.empty())
-		return CompositeType_None;
+		return CompositeDataType_None;
 	if(s == "vec")
-		return CompositeType_Vector;
+		return CompositeDataType_Vector;
 	else if(s == "mat")
-		return CompositeType_Matrix;
+		return CompositeDataType_Matrix;
 	else
 	{
 		FatalError("'%s' does not map to a composite type!", s.c_str());
-		return CompositeType_None;
+		return CompositeDataType_None;
 	}
 }
 
-const char* ToDefinitionString( CompositeType type )
+const char* ToDefinitionString( CompositeDataType type )
 {
 	switch(type)
 	{
-		case CompositeType_None:   return "";
-		case CompositeType_Vector: return "vec";
-		case CompositeType_Matrix: return "mat";
+		case CompositeDataType_None:   return "";
+		case CompositeDataType_Vector: return "vec";
+		case CompositeDataType_Matrix: return "mat";
 	}
-	return "UnknownCompositeType";
+	return "UnknownCompositeDataType";
 }
 
 
 /// ---- DataType ----
 
-DataType::DataType()
+DataType::DataType() :
+	m_PrimitiveDataType(PrimitiveDataType_Bool),
+	m_CompositeDataType(CompositeDataType_None),
+	m_CompositeSize(0)
 {
-	// Attention: Uninitialized!
 }
 
 DataType::DataType( GLenum e )
 {
 	switch(e)
 	{
-		case GL_BOOL:           set(PrimitveType_Bool,   CompositeType_None, 1); break;
-		case GL_BYTE:           set(PrimitveType_Byte,   CompositeType_None, 1); break;
-		case GL_UNSIGNED_BYTE:  set(PrimitveType_UByte,  CompositeType_None, 1); break;
-		case GL_SHORT:          set(PrimitveType_Short,  CompositeType_None, 1); break;
-		case GL_UNSIGNED_SHORT: set(PrimitveType_UShort, CompositeType_None, 1); break;
-		case GL_INT:            set(PrimitveType_Int,    CompositeType_None, 1); break;
-		case GL_UNSIGNED_INT:   set(PrimitveType_Int,    CompositeType_None, 1); break;
-		case GL_FLOAT:          set(PrimitveType_Float,  CompositeType_None, 1); break;
-		case GL_DOUBLE:         set(PrimitveType_Double, CompositeType_None, 1); break;
+		case GL_BOOL:           set(PrimitiveDataType_Bool,   CompositeDataType_None, 1); break;
+		case GL_BYTE:           set(PrimitiveDataType_Byte,   CompositeDataType_None, 1); break;
+		case GL_UNSIGNED_BYTE:  set(PrimitiveDataType_UByte,  CompositeDataType_None, 1); break;
+		case GL_SHORT:          set(PrimitiveDataType_Short,  CompositeDataType_None, 1); break;
+		case GL_UNSIGNED_SHORT: set(PrimitiveDataType_UShort, CompositeDataType_None, 1); break;
+		case GL_INT:            set(PrimitiveDataType_Int,    CompositeDataType_None, 1); break;
+		case GL_UNSIGNED_INT:   set(PrimitiveDataType_Int,    CompositeDataType_None, 1); break;
+		case GL_FLOAT:          set(PrimitiveDataType_Float,  CompositeDataType_None, 1); break;
+		case GL_DOUBLE:         set(PrimitiveDataType_Double, CompositeDataType_None, 1); break;
 		
-		case GL_BOOL_VEC2: set(PrimitveType_Bool, CompositeType_Vector, 2); break;
-		case GL_BOOL_VEC3: set(PrimitveType_Bool, CompositeType_Vector, 2); break;
-		case GL_BOOL_VEC4: set(PrimitveType_Bool, CompositeType_Vector, 2); break;
+		case GL_BOOL_VEC2: set(PrimitiveDataType_Bool, CompositeDataType_Vector, 2); break;
+		case GL_BOOL_VEC3: set(PrimitiveDataType_Bool, CompositeDataType_Vector, 2); break;
+		case GL_BOOL_VEC4: set(PrimitiveDataType_Bool, CompositeDataType_Vector, 2); break;
 		
-		case GL_INT_VEC2: set(PrimitveType_Int, CompositeType_Vector, 2); break;
-		case GL_INT_VEC3: set(PrimitveType_Int, CompositeType_Vector, 3); break;
-		case GL_INT_VEC4: set(PrimitveType_Int, CompositeType_Vector, 4); break;
+		case GL_INT_VEC2: set(PrimitiveDataType_Int, CompositeDataType_Vector, 2); break;
+		case GL_INT_VEC3: set(PrimitiveDataType_Int, CompositeDataType_Vector, 3); break;
+		case GL_INT_VEC4: set(PrimitiveDataType_Int, CompositeDataType_Vector, 4); break;
 		
-		case GL_UNSIGNED_INT_VEC2: set(PrimitveType_UInt, CompositeType_Vector, 2); break;
-		case GL_UNSIGNED_INT_VEC3: set(PrimitveType_UInt, CompositeType_Vector, 3); break;
-		case GL_UNSIGNED_INT_VEC4: set(PrimitveType_UInt, CompositeType_Vector, 4); break;
+		case GL_UNSIGNED_INT_VEC2: set(PrimitiveDataType_UInt, CompositeDataType_Vector, 2); break;
+		case GL_UNSIGNED_INT_VEC3: set(PrimitiveDataType_UInt, CompositeDataType_Vector, 3); break;
+		case GL_UNSIGNED_INT_VEC4: set(PrimitiveDataType_UInt, CompositeDataType_Vector, 4); break;
 		
-		case GL_FLOAT_VEC2: set(PrimitveType_Float, CompositeType_Vector, 2); break;
-		case GL_FLOAT_VEC3: set(PrimitveType_Float, CompositeType_Vector, 3); break;
-		case GL_FLOAT_VEC4: set(PrimitveType_Float, CompositeType_Vector, 4); break;
-		case GL_FLOAT_MAT2: set(PrimitveType_Float, CompositeType_Matrix, 2); break;
-		case GL_FLOAT_MAT3: set(PrimitveType_Float, CompositeType_Matrix, 3); break;
-		case GL_FLOAT_MAT4: set(PrimitveType_Float, CompositeType_Matrix, 4); break;
+		case GL_FLOAT_VEC2: set(PrimitiveDataType_Float, CompositeDataType_Vector, 2); break;
+		case GL_FLOAT_VEC3: set(PrimitiveDataType_Float, CompositeDataType_Vector, 3); break;
+		case GL_FLOAT_VEC4: set(PrimitiveDataType_Float, CompositeDataType_Vector, 4); break;
+		case GL_FLOAT_MAT2: set(PrimitiveDataType_Float, CompositeDataType_Matrix, 2); break;
+		case GL_FLOAT_MAT3: set(PrimitiveDataType_Float, CompositeDataType_Matrix, 3); break;
+		case GL_FLOAT_MAT4: set(PrimitiveDataType_Float, CompositeDataType_Matrix, 4); break;
 		
-		case GL_DOUBLE_VEC2: set(PrimitveType_Double, CompositeType_Vector, 2); break;
-		case GL_DOUBLE_VEC3: set(PrimitveType_Double, CompositeType_Vector, 3); break;
-		case GL_DOUBLE_VEC4: set(PrimitveType_Double, CompositeType_Vector, 4); break;
-		case GL_DOUBLE_MAT2: set(PrimitveType_Double, CompositeType_Matrix, 2); break;
-		case GL_DOUBLE_MAT3: set(PrimitveType_Double, CompositeType_Matrix, 3); break;
-		case GL_DOUBLE_MAT4: set(PrimitveType_Double, CompositeType_Matrix, 4); break;
+		case GL_DOUBLE_VEC2: set(PrimitiveDataType_Double, CompositeDataType_Vector, 2); break;
+		case GL_DOUBLE_VEC3: set(PrimitiveDataType_Double, CompositeDataType_Vector, 3); break;
+		case GL_DOUBLE_VEC4: set(PrimitiveDataType_Double, CompositeDataType_Vector, 4); break;
+		case GL_DOUBLE_MAT2: set(PrimitiveDataType_Double, CompositeDataType_Matrix, 2); break;
+		case GL_DOUBLE_MAT3: set(PrimitiveDataType_Double, CompositeDataType_Matrix, 3); break;
+		case GL_DOUBLE_MAT4: set(PrimitiveDataType_Double, CompositeDataType_Matrix, 4); break;
 
 		default: FatalError("Invalid/unsupported gl data type: %u", e);
 	}
@@ -224,17 +228,17 @@ DataType::DataType( const char* def, int length )
 	setByDef(def, length);
 }
 
-DataType::DataType( PrimitveType primitive, CompositeType composite, int compositeSize ) :
-	m_PrimitiveType(primitive),
-	m_CompositeType(composite),
+DataType::DataType( PrimitiveDataType primitive, CompositeDataType composite, int compositeSize ) :
+	m_PrimitiveDataType(primitive),
+	m_CompositeDataType(composite),
 	m_CompositeSize(compositeSize)
 {
 }
 
-void DataType::set( PrimitveType primitive, CompositeType composite, int compositeSize )
+void DataType::set( PrimitiveDataType primitive, CompositeDataType composite, int compositeSize )
 {
-	m_PrimitiveType = primitive;
-	m_CompositeType = composite;
+	m_PrimitiveDataType = primitive;
+	m_CompositeDataType = composite;
 	m_CompositeSize = compositeSize;
 }
 
@@ -254,24 +258,21 @@ void DataType::setByDef( const char* def, int length )
 				if(std::isdigit(ch))
 				{
 					buf.push_back('\0');
-					m_CompositeType = CompositeTypeByDefString(buf);
+					m_CompositeDataType = CompositeDataTypeByDefString(buf.data());
 					buf.clear();
+					
+					m_CompositeSize = ch - '0';
+					assert(InclusiveInside(1,m_CompositeSize,4));
+					
 					mode = 1;
 				}
 				else
 					buf.push_back(ch);
 			} break;
 			
-			case 1: // count
+			case 1:
 			{
-				m_CompositeSize = ch - '0';
-				assert(InclusiveInside(1,m_Count,4));
-				mode = 2;
-			} break;
-			
-			case 2: // token 3
-			{
-				m_PrimitiveType = PrimitiveTypeByChar(ch);
+				m_PrimitiveDataType = PrimitiveDataTypeByChar(ch);
 				return;
 			} break;
 			
@@ -282,20 +283,20 @@ void DataType::setByDef( const char* def, int length )
 
 	if(mode == 1 && buf.size() == 1)
 	{
-		m_CompositeType = CompositeType_None;
+		m_CompositeDataType = CompositeDataType_None;
 		m_CompositeSize = 1;
-		m_PrimitiveType = PrimitiveTypeByChar(buf[0]);
+		m_PrimitiveDataType = PrimitiveDataTypeByChar(buf[0]);
 	}
 }
 
-PrimitveType DataType::primitveType() const
+PrimitiveDataType DataType::primitveType() const
 {
-	return m_PrimitiveType;
+	return m_PrimitiveDataType;
 }
 
-CompositeType DataType::compositeType() const
+CompositeDataType DataType::compositeType() const
 {
-	return m_CompositeType;
+	return m_CompositeDataType;
 }
 
 int DataType::compositeSize() const
@@ -305,13 +306,13 @@ int DataType::compositeSize() const
 
 int DataType::componentCount() const
 {
-	switch(m_CompositeType)
+	switch(m_CompositeDataType)
 	{
-		case CompositeType_None:
-		case CompositeType_Vector:
+		case CompositeDataType_None:
+		case CompositeDataType_Vector:
 			return m_CompositeSize;
 
-		case CompositeType_Matrix:
+		case CompositeDataType_Matrix:
 			return m_CompositeSize * m_CompositeSize;
 
 		default:
@@ -323,108 +324,108 @@ int DataType::componentCount() const
 
 int DataType::sizeInBytes() const
 {
-	return componentCount() * SizeOf(m_PrimitiveType);
+	return componentCount() * SizeOf(m_PrimitiveDataType);
 }
 
 std::string DataType::toString() const
 {
-	if(m_CompositeType == CompositeType_None)
-		return Format("%s", AsString(m_PrimitiveType));
+	if(m_CompositeDataType == CompositeDataType_None)
+		return Format("%s", AsString(m_PrimitiveDataType));
 	else
-		return Format("%s%d%c", ToDefinitionString(m_CompositeType), m_CompositeSize, ToDefinitionChar(m_PrimitiveType));
+		return Format("%s%d%c", ToDefinitionString(m_CompositeDataType), m_CompositeSize, ToDefinitionChar(m_PrimitiveDataType));
 }
 
 GLenum DataType::toGLenum() const
 {
-	switch(m_CompositeType)
+	switch(m_CompositeDataType)
 	{
-		case CompositeType_None:
+		case CompositeDataType_None:
 		{
-			switch(m_PrimitiveType)
+			switch(m_PrimitiveDataType)
 			{
-				case PrimitveType_Bool:   return GL_BOOL;
-				case PrimitveType_Byte:   return GL_BYTE;
-				case PrimitveType_UByte:  return GL_UNSIGNED_BYTE;
-				case PrimitveType_Short:  return GL_SHORT;
-				case PrimitveType_UShort: return GL_UNSIGNED_SHORT;
-				case PrimitveType_Int:    return GL_INT;
-				case PrimitveType_UInt:   return GL_UNSIGNED_INT;
-				case PrimitveType_Float:  return GL_FLOAT;
-				case PrimitveType_Double: return GL_DOUBLE;
+				case PrimitiveDataType_Bool:   return GL_BOOL;
+				case PrimitiveDataType_Byte:   return GL_BYTE;
+				case PrimitiveDataType_UByte:  return GL_UNSIGNED_BYTE;
+				case PrimitiveDataType_Short:  return GL_SHORT;
+				case PrimitiveDataType_UShort: return GL_UNSIGNED_SHORT;
+				case PrimitiveDataType_Int:    return GL_INT;
+				case PrimitiveDataType_UInt:   return GL_UNSIGNED_INT;
+				case PrimitiveDataType_Float:  return GL_FLOAT;
+				case PrimitiveDataType_Double: return GL_DOUBLE;
 			}
 		} break;
 
-		case CompositeType_Vector:
+		case CompositeDataType_Vector:
 		{
 			switch(m_CompositeSize)
 			{
 				case 2:
 				{
-					switch(m_PrimitiveType)
+					switch(m_PrimitiveDataType)
 					{
-						case PrimitveType_Bool:   return GL_BOOL_VEC2;
-						case PrimitveType_Int:    return GL_INT_VEC2;
-						case PrimitveType_UInt:   return GL_UNSIGNED_INT_VEC2;
-						case PrimitveType_Float:  return GL_FLOAT_VEC2;
-						case PrimitveType_Double: return GL_DOUBLE_VEC2;
+						case PrimitiveDataType_Bool:   return GL_BOOL_VEC2;
+						case PrimitiveDataType_Int:    return GL_INT_VEC2;
+						case PrimitiveDataType_UInt:   return GL_UNSIGNED_INT_VEC2;
+						case PrimitiveDataType_Float:  return GL_FLOAT_VEC2;
+						case PrimitiveDataType_Double: return GL_DOUBLE_VEC2;
 					}
 				} break;
 
 				case 3:
 				{
-					switch(m_PrimitiveType)
+					switch(m_PrimitiveDataType)
 					{
-						case PrimitveType_Bool:   return GL_BOOL_VEC3;
-						case PrimitveType_Int:    return GL_INT_VEC3;
-						case PrimitveType_UInt:   return GL_UNSIGNED_INT_VEC3;
-						case PrimitveType_Float:  return GL_FLOAT_VEC3;
-						case PrimitveType_Double: return GL_DOUBLE_VEC3;
+						case PrimitiveDataType_Bool:   return GL_BOOL_VEC3;
+						case PrimitiveDataType_Int:    return GL_INT_VEC3;
+						case PrimitiveDataType_UInt:   return GL_UNSIGNED_INT_VEC3;
+						case PrimitiveDataType_Float:  return GL_FLOAT_VEC3;
+						case PrimitiveDataType_Double: return GL_DOUBLE_VEC3;
 					}
 				} break;
 
 
 				case 4:
 				{
-					switch(m_PrimitiveType)
+					switch(m_PrimitiveDataType)
 					{
-						case PrimitveType_Bool:   return GL_BOOL_VEC4;
-						case PrimitveType_Int:    return GL_INT_VEC4;
-						case PrimitveType_UInt:   return GL_UNSIGNED_INT_VEC4;
-						case PrimitveType_Float:  return GL_FLOAT_VEC4;
-						case PrimitveType_Double: return GL_DOUBLE_VEC4;
+						case PrimitiveDataType_Bool:   return GL_BOOL_VEC4;
+						case PrimitiveDataType_Int:    return GL_INT_VEC4;
+						case PrimitiveDataType_UInt:   return GL_UNSIGNED_INT_VEC4;
+						case PrimitiveDataType_Float:  return GL_FLOAT_VEC4;
+						case PrimitiveDataType_Double: return GL_DOUBLE_VEC4;
 					}
 				} break;
 			}
 		} break;
 
-		case CompositeType_Matrix:
+		case CompositeDataType_Matrix:
 		{
 			switch(m_CompositeSize)
 			{
 				case 2:
 				{
-					switch(m_PrimitiveType)
+					switch(m_PrimitiveDataType)
 					{
-						case PrimitveType_Float:  return GL_FLOAT_MAT2;
-						case PrimitveType_Double: return GL_DOUBLE_MAT2;
+						case PrimitiveDataType_Float:  return GL_FLOAT_MAT2;
+						case PrimitiveDataType_Double: return GL_DOUBLE_MAT2;
 					}
 				} break;
 
 				case 3:
 				{
-					switch(m_PrimitiveType)
+					switch(m_PrimitiveDataType)
 					{
-						case PrimitveType_Float:  return GL_FLOAT_MAT3;
-						case PrimitveType_Double: return GL_DOUBLE_MAT3;
+						case PrimitiveDataType_Float:  return GL_FLOAT_MAT3;
+						case PrimitiveDataType_Double: return GL_DOUBLE_MAT3;
 					}
 				} break;
 
 				case 4:
 				{
-					switch(m_PrimitiveType)
+					switch(m_PrimitiveDataType)
 					{
-						case PrimitveType_Float:  return GL_FLOAT_MAT4;
-						case PrimitveType_Double: return GL_DOUBLE_MAT4;
+						case PrimitiveDataType_Float:  return GL_FLOAT_MAT4;
+						case PrimitiveDataType_Double: return GL_DOUBLE_MAT4;
 					}
 				} break;
 			}
@@ -438,7 +439,7 @@ GLenum DataType::toGLenum() const
 bool DataType::operator == ( const DataType& other ) const
 {
 	return
-		(m_PrimitiveType == other.m_PrimitiveType) &&
+		(m_PrimitiveDataType == other.m_PrimitiveDataType) &&
 		(m_CompositeSize == other.m_CompositeSize) &&
 		(m_CompositeSize == m_CompositeSize);
 }

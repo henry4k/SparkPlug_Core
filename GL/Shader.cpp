@@ -264,11 +264,8 @@ void Program::readAttributeSizes()
 		);
 		assert(nameLength > 0);
 		
-		Log("Attribute %s: %d x %s",
-			name,
-			size,
-			AsString(AttributeTypeFromGL(type, false))
-		);
+		DataType dataType(type);
+		Log("Attribute %s: %s", name, dataType.toString().c_str());
 		
 		if(nameLength > 3 &&
 			name[0] == 'g' &&
@@ -276,7 +273,7 @@ void Program::readAttributeSizes()
 			name[2] == '_')
 			continue; // We are not interested in internal attributes.
 		
-		m_AttributeSizes[name] = size;
+		m_AttributeSizes[name] = dataType.componentCount();
 	}
 }
 
@@ -322,14 +319,14 @@ void Program::setAttributes( const VertexFormat& reference )
 		}
 		
 		// Sind sie vielleicht unterschiedlich groß?
-		if(attribute.componentCount() != targetSizeIter->second)
+		if(attribute.dataType().componentCount() != targetSizeIter->second)
 		{
 			LogError("Vertex format %s is incomplatible to %s, because the shader needs %s to consist of %d instead of %d components.",
 				reference.asString().c_str(),
 				toString().c_str(),
 				attribute.name(),
 				targetSizeIter->second,
-				attribute.componentCount()
+				attribute.dataType().componentCount()
 			);
 			return;
 		}

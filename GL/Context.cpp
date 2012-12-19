@@ -347,15 +347,15 @@ void Context::setVertexFormat( const VertexFormat& format, void* data )
 			// Setup ..
 			glVertexAttribPointer(
 				i, // the identifier
-				newAttribute.componentCount(), // size (i.e. how many elements of type)
-				ConvertToGL(newAttribute.componentType()),  // type
-				IsNormalized(newAttribute.componentType()), // normalize = false (at least for the moment)
-				newAttribute.sizeInBytes(), // stride between each element of this attribute
+				newAttribute.dataType().componentCount(), // size (i.e. how many elements of type)
+				ConvertToGL(newAttribute.dataType().primitveType()),  // type
+				newAttribute.isNormalized(),
+				newAttribute.dataType().sizeInBytes(), // stride between each element of this attribute
 				(void*)((long)data+offset) // offset from the beginning
 			);
 		}
 		
-		offset += newAttribute.sizeInBytes();
+		offset += newAttribute.dataType().sizeInBytes();
 	}
 	
 	if(formatAttributeCount < m_ActiveAttributes)
