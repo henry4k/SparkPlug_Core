@@ -23,6 +23,7 @@ enum PrimitveType
 const char* AsString( PrimitveType type );
 GLenum ConvertToGL( PrimitveType type );
 PrimitveType PrimitveTypeFromGL( GLenum e );
+int SizeOf( PrimitveType type );
 
 enum CompositeType
 {
@@ -32,12 +33,14 @@ enum CompositeType
 };
 const char* AsString( CompositeType type );
 
-class TypeInfo
+class DataType
 {
 public:
-	TypeInfo();
-	TypeInfo( GLenum e );
-	TypeInfo( PrimitveType primitive, CompositeType composite, int compositeSize );
+	DataType();
+	DataType( GLenum e );
+	DataType( const char* def );
+	DataType( const char* def, int length );
+	DataType( PrimitveType primitive, CompositeType composite, int compositeSize );
 	
 	 PrimitveType primitveType() const;
 	CompositeType compositeType() const;
@@ -45,6 +48,12 @@ public:
 	int compositeSize() const;
 	int componentCount() const;
 	int sizeInBytes() const;
+
+	std::string toString() const;
+	GLenum toGLenum() const;
+
+	bool operator == ( const DataType& other ) const;
+	bool operator != ( const DataType& other ) const;
 	
 private:
 	 PrimitveType m_PrimitiveType;

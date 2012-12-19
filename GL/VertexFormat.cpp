@@ -9,199 +9,16 @@ namespace GL
 {
 
 
-
-
-struct ValueInfo
-{
-	DataType type;
-	bool normalized;
-	int components;
-};
-
-
-
-/// ---- AttributeType ----
-
-const char* AsString( AttributeType type )
-{
-	switch(type)
-	{
-		case AttributeType_UInt8:
-			return "UInt8";
-		case AttributeType_NormalizedUInt8:
-			return "normalized UInt8";
-		case AttributeType_UInt16:
-			return "UInt16";
-		case AttributeType_NormalizedUInt16:
-			return "normalized UInt16";
-		case AttributeType_UInt32:
-			return "UInt32";
-		case AttributeType_NormalizedUInt32:
-			return "normalized UInt32";
-		case AttributeType_Float32:
-			return "Float32";
-		case AttributeType_Float64:
-			return "Float64";
-		default:
-			;
-	}
-	return "UnknownAttributeType";
-}
-
-GLenum ConvertToGL( AttributeType type )
-{
-	switch(type)
-	{
-		case AttributeType_UInt8:
-		case AttributeType_NormalizedUInt8:
-			return GL_UNSIGNED_BYTE;
-		case AttributeType_UInt16:
-		case AttributeType_NormalizedUInt16:
-			return GL_UNSIGNED_SHORT;
-		case AttributeType_UInt32:
-		case AttributeType_NormalizedUInt32:
-			return GL_UNSIGNED_INT;
-		case AttributeType_Float32:
-			return GL_FLOAT;
-		case AttributeType_Float64:
-			return GL_DOUBLE;
-		default:
-			;
-	}
-	FatalError("Invalid attribute type: %u", type);
-	return 0;
-}
-
-AttributeType AttributeTypeFromGL( GLenum e, bool normalized, int* countOut )
-{
-	int dummy = 0;
-	if(countOut == NULL)
-		countOut = &dummy;
-	
-	switch(e)
-	{
-		case GL_UNSIGNED_INT: *countOut = 1; return AttributeType_Float32;
-		case GL_DOUBLE:       *countOut = 1; return AttributeType_Float64;
-		
-		case GL_FLOAT:           *countOut = 1; return AttributeType_Float32;
-		case GL_FLOAT_VEC2_ARB:  *countOut = 2; return AttributeType_Float32;
-		case GL_FLOAT_VEC3_ARB:  *countOut = 3; return AttributeType_Float32;
-		case GL_FLOAT_VEC4_ARB:  *countOut = 4; return AttributeType_Float32;
-		
-		case GL_FLOAT_VEC2_ARB:  *countOut = 2; return AttributeType_Float32;
-		case GL_DOUBLE_VEC2_ARB: *countOut = 2; return AttributeType_Float64;
-		case GL_DOUBLE: return AttributeType_Float64;
-		default: ;
-	}
-	FatalError("Invalid gl attribute type: %u", e);
-	return AttributeType_Float32;
-}
-
-AttributeType AttributeTypeFromGL( GLenum e, bool normalized )
-{
-	switch(e)
-	{
-		case GL_UNSIGNED_BYTE:
-			return normalized ? AttributeType_NormalizedUInt8 : AttributeType_UInt8;
-		case GL_UNSIGNED_SHORT:
-			return normalized ? AttributeType_NormalizedUInt16 : AttributeType_UInt16;
-		case GL_UNSIGNED_INT:
-			return normalized ? AttributeType_NormalizedUInt32 : AttributeType_UInt32;
-		case GL_FLOAT:
-			return AttributeType_Float32;
-		case GL_DOUBLE:
-			return AttributeType_Float64;
-		default:
-			;
-	}
-	FatalError("Invalid gl attribute type: %u", e);
-	return AttributeType_Float32;
-}
-
-int SizeOf( AttributeType type )
-{
-	switch(type)
-	{
-		case AttributeType_UInt8:
-		case AttributeType_NormalizedUInt8:
-			return sizeof(GLubyte);
-		case AttributeType_UInt16:
-		case AttributeType_NormalizedUInt16:
-			return sizeof(GLushort);
-		case AttributeType_UInt32:
-		case AttributeType_NormalizedUInt32:
-			return sizeof(GLuint);
-		case AttributeType_Float32:
-			return sizeof(GLfloat);
-		case AttributeType_Float64:
-			return sizeof(GLdouble);
-		default:
-			;
-	}
-	FatalError("Invalid attribute type: %u", type);
-	return 0;
-}
-
-bool IsNormalized( AttributeType type )
-{
-	switch(type)
-	{
-		case AttributeType_NormalizedUInt8:
-		case AttributeType_NormalizedUInt16:
-		case AttributeType_NormalizedUInt32:
-			return true;
-		default: ;
-	}
-	return false;
-}
-
-char AsChar( AttributeType type )
-{
-	switch(type)
-	{
-		case AttributeType_UInt8:            return 'B';
-		case AttributeType_NormalizedUInt8:  return 'b';
-		case AttributeType_UInt16:           return 'S';
-		case AttributeType_NormalizedUInt16: return 's';
-		case AttributeType_UInt32:           return 'I';
-		case AttributeType_NormalizedUInt32: return 'i';
-		case AttributeType_Float32:          return 'f';
-		case AttributeType_Float64:          return 'd';
-		default: ;
-	}
-	FatalError("Invalid attribute type: %u", type);
-	return '?';
-}
-
-AttributeType AttributeTypeByChar( char ch )
-{
-	switch(ch)
-	{
-		case 'B': return AttributeType_UInt8;
-		case 'b': return AttributeType_NormalizedUInt8;
-		case 'S': return AttributeType_UInt16;
-		case 's': return AttributeType_NormalizedUInt16;
-		case 'I': return AttributeType_UInt32;
-		case 'i': return AttributeType_NormalizedUInt32;
-		case 'f': return AttributeType_Float32;
-		case 'd': return AttributeType_Float64;
-		default: ;
-	}
-	FatalError("Invalid attribute type char: %c", ch);
-	return AttributeType_UInt8;
-}
-
-
 /// ---- VertexAttribute ----
 
 VertexAttribute::VertexAttribute()
 {
 }
 
-VertexAttribute::VertexAttribute( const char* name, int count, AttributeType type ) :
+VertexAttribute::VertexAttribute( const char* name, const DataType& type, bool normalize ) :
 	m_Name(name),
-	m_Count(count),
-	m_Type(type)
+	m_Type(type),
+	m_Normalize(normalize)
 {
 }
 
@@ -219,12 +36,13 @@ VertexAttribute::~VertexAttribute()
 {
 }
 
+// "Position:vec3f TexCoord:nvec2I"
 void VertexAttribute::setByDef( const char* def, int length )
 {
-	std::vector<char> nameBuffer;
-	int count;
-	AttributeType type;
+	std::vector<char> buf;
+	DataType type;
 	
+	m_Normalize = false;
 	int mode = 0;
 	
 	for(int i = 0; i < length; ++i)
@@ -237,25 +55,28 @@ void VertexAttribute::setByDef( const char* def, int length )
 			{
 				if(ch == ':')
 				{
-					nameBuffer.push_back('\0');
-					m_Name = nameBuffer.data();
+					buf.push_back('\0');
+					m_Name = buf.data();
+					buf.clear();
 					mode = 1;
 				}
 				else
-					nameBuffer.push_back(ch);
+					buf.push_back(ch);
 			} break;
 			
-			case 1: // count
+			case 1: // data type def
 			{
-				m_Count = ch - '0';
-				assert(InclusiveInside(1,m_Count,4));
-				mode = 2;
-			} break;
-			
-			case 2: // type
-			{
-				m_Type = AttributeTypeByChar(ch);
-				return;
+				if(ch == 'n' && buf.size() == 0)
+				{
+					m_Normalize = true;
+				}
+				else if(i == length-1)
+				{
+					m_Type = DataType(buf.data(), buf.size());
+					break;
+				}
+				else
+					buf.push_back(ch);
 			} break;
 			
 			default:
@@ -268,8 +89,8 @@ bool VertexAttribute::operator == ( const VertexAttribute& format ) const
 {
 	return
 		(m_Name == format.m_Name) &&
-		(m_Count == format.m_Count) &&
-		(m_Type == format.m_Type);
+		(m_Type == format.m_Type) &&
+		(m_Normalize == format.m_Normalize);
 }
 
 bool VertexAttribute::operator != ( const VertexAttribute& format ) const
@@ -282,32 +103,17 @@ const char* VertexAttribute::name() const
 	return m_Name.c_str();
 }
 
-int VertexAttribute::componentCount() const
-{
-	return m_Count;
-}
-
-AttributeType VertexAttribute::componentType() const
+const DataType& VertexAttribute::componentType() const
 {
 	return m_Type;
 }
 
-int VertexAttribute::sizeInBytes() const
-{
-	return SizeOf(m_Type)*m_Count;
-}
-
 std::string VertexAttribute::asString() const
 {
-	const char buf[] =
-	{
-		':',
-		(char)('0'+m_Count),
-		AsChar(m_Type),
-		'\0'
-	};
-	
-	return m_Name+buf;
+	std::string buf = m_Name+":";
+	if(m_Normalize)
+		buf += "n";
+	return buf+m_Type.toString();
 }
 
 
