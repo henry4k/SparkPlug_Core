@@ -1,30 +1,12 @@
-AddModule(${ModulePrefix}Common)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
-IF(UNIX AND NOT APPLE)
-	INCLUDE(CheckFunctionExists)
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
 
-	CHECK_FUNCTION_EXISTS("clock_gettime" HAVE_CLOCK_GETTIME)
-	IF(NOT HAVE_CLOCK_GETTIME)
-		SET(CMAKE_REQUIRED_LIBRARIES "rt")
-		CHECK_FUNCTION_EXISTS("clock_gettime" RT_HAS_CLOCK_GETTIME)
-		UNSET(CMAKE_REQUIRED_LIBRARIES)
-		IF(RT_HAS_CLOCK_GETTIME)
-			TARGET_LINK_LIBRARIES(${ModulePrefix}Common "rt")
-			SET(HAVE_CLOCK_GETTIME 1)
-		ELSE()
-			MESSAGE(WARNING "Can't find clock_gettime! Please report this case the developers!")
-		ENDIF()
-	ENDIF()
-ENDIF()
+INCLUDE("CxxFlags")
+SET(CMAKE_CXX_FLAGS "${STRICT_CXX_FLAGS}")
 
-IF(WIN32)
-	TARGET_LINK_LIBRARIES(${ModulePrefix}Common "winmm") # "comctl32" "user32" "ole32")
-	# ^- ??!
-# ELSEIF(APPLE)
-# 	SET(ClientFrameworks "Cocoa")
-ENDIF()
+PROJECT("SparkPlug_Core" C CXX)
 
-InstallModule(${ModulePrefix}Common)
+OPTION(BUILD_SHARED_LIBS "Build modules as shared libraries?" OFF)
 
-ADD_SUBDIRECTORY("GL")
-ADD_SUBDIRECTORY("ImageIo")
+ADD_SUBDIRECTORY("Source")

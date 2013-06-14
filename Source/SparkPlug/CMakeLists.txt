@@ -1,0 +1,34 @@
+FILE(GLOB Sources "*.h" "*.cpp")
+ADD_LIBRARY(SparkPlug_Core ${Sources})
+
+IF(UNIX AND NOT APPLE)
+	INCLUDE(CheckFunctionExists)
+
+	CHECK_FUNCTION_EXISTS("clock_gettime" HAVE_CLOCK_GETTIME)
+	IF(NOT HAVE_CLOCK_GETTIME)
+		SET(CMAKE_REQUIRED_LIBRARIES "rt")
+		CHECK_FUNCTION_EXISTS("clock_gettime" RT_HAS_CLOCK_GETTIME)
+		UNSET(CMAKE_REQUIRED_LIBRARIES)
+		IF(RT_HAS_CLOCK_GETTIME)
+            TARGET_LINK_LIBRARIES(SparkPlug_Common "rt")
+			SET(HAVE_CLOCK_GETTIME 1)
+		ELSE()
+			MESSAGE(WARNING "Can't find clock_gettime! Please report this case the developers!")
+		ENDIF()
+	ENDIF()
+ENDIF()
+
+IF(WIN32)
+    TARGET_LINK_LIBRARIES(SparkPlug_Core "winmm")
+ENDIF()
+
+
+FILE(GLOB PublicHeaders RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.h")
+SET_TARGET_PROPERTIES(SparkPlug_Core PROPERTIES PUBLIC_HEADER "${PublicHeaders}")
+
+INSTALL(TARGETS SparkPlug_Core
+    RUNTIME DESTINATION bin
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    PUBLIC_HEADER DESTINATION "include/SparkPlug"
+)
