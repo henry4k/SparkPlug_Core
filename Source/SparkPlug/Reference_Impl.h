@@ -21,7 +21,10 @@ const T* ReferenceT<T>::getConst() const
 template< typename T >
 T* ReferenceT<T>::operator->() const
 {
-	return get();
+    T* r = get();
+    if(r == NULL)
+		FatalError("Trying to access null reference!");
+    return r;
 }
 
 template< typename T >
