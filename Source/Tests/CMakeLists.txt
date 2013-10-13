@@ -8,4 +8,4 @@ MACRO(AddTest Target)
 ENDMACRO()
 
 
-AddTest(test SparkPlug_Core)
+AddTest(test sparkplug-core)

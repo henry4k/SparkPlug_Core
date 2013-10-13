@@ -2,6 +2,8 @@
 #define __SPARKPLUG_FSMONITOR__
 
 #include <vector>
+#include <SparkPlug/Path.h>
+
 
 namespace SparkPlug
 {

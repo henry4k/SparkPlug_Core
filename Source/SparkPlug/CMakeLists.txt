@@ -1,5 +1,5 @@
 FILE(GLOB Sources "*.h" "*.cpp")
-ADD_LIBRARY(SparkPlug_Core ${Sources})
+ADD_LIBRARY(sparkplug-core ${Sources})
 
 IF(UNIX AND NOT APPLE)
 	INCLUDE(CheckFunctionExists)
@@ -19,16 +19,33 @@ IF(UNIX AND NOT APPLE)
 ENDIF()
 
 IF(WIN32)
-    TARGET_LINK_LIBRARIES(SparkPlug_Core "winmm")
+    TARGET_LINK_LIBRARIES(sparkplug-core "winmm")
 ENDIF()
 
 
 FILE(GLOB PublicHeaders RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "*.h")
-SET_TARGET_PROPERTIES(SparkPlug_Core PROPERTIES PUBLIC_HEADER "${PublicHeaders}")
+SET_TARGET_PROPERTIES(sparkplug-core PROPERTIES PUBLIC_HEADER "${PublicHeaders}")
+SET_TARGET_PROPERTIES(sparkplug-core PROPERTIES VERSION "${VERSION}")
 
-INSTALL(TARGETS SparkPlug_Core
+INSTALL(TARGETS sparkplug-core
     RUNTIME DESTINATION bin
     ARCHIVE DESTINATION lib
     LIBRARY DESTINATION lib
     PUBLIC_HEADER DESTINATION "include/SparkPlug"
 )
+
+if(UNIX)
+    SET(PKG_DEPS "")
+    SET(PKG_LIBS "")
+    SET(LIB_NAME "sparkplug-core.${VERSION}")
+
+    CONFIGURE_FILE(
+        ${CMAKE_SOURCE_DIR}/sparkplug-core.pc.in
+        ${CMAKE_BINARY_DIR}/sparkplug-core.pc @ONLY
+    )
+
+    INSTALL(
+        FILES ${CMAKE_BINARY_DIR}/sparkplug-core.pc
+        DESTINATION lib${LIB_SUFFIX}/pkgconfig
+    )
+endif()
