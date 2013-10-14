@@ -25,8 +25,6 @@
 #ifndef SIMPLEX_H_
 #define SIMPLEX_H_
 
-#include <SparkPlug/Vector.h>
-
 /* 2D, 3D and 4D Simplex functions - values (-1, 1).
  * This algorithm was originally designed by Ken Perlin, but my code has been adapted
  * from the implementation written by Stefan Gustavson (stegu@itn.liu.se)
@@ -43,14 +41,12 @@ namespace SparkPlug
 {
 
 // Multi-octave Simplex noise - multiple noise values are combined.
-float SimplexNoise( const int octaves, const float persistence, const float scale, const vec2f pos );
-float SimplexNoise( const int octaves, const float persistence, const float scale, const vec3f pos );
-float SimplexNoise( const int octaves, const float persistence, const float scale, const vec4f pos );
+float SimplexNoise( const int octaves, const float persistence, const float scale, const float x, const float y );
+float SimplexNoise( const int octaves, const float persistence, const float scale, const float x, const float y, const float z );
 
 // Raw Simplex noise - a single noise value.
-float SimplexRawNoise( const vec2f pos );
-float SimplexRawNoise( const vec3f pos );
-float SimplexRawNoise( const vec4f pos );
+float SimplexRawNoise( const float x, const float y );
+float SimplexRawNoise( const float x, const float y, const float z );
 
 }
 

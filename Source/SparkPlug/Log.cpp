@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <string.h>
 #include <algorithm>
 #include <vector>
@@ -33,13 +34,13 @@ void LogRawLine( LogLevel level, const char* line )
 		switch(level)
 		{
 			case LogLevel_Error:
-				std::cerr << "Error: " << line << std::endl;
+				fprintf(stderr, "Error: %s\n", line);
 				break;
 			case LogLevel_Warning:
-				std::cerr << "Warning: " << line << std::endl;
+				fprintf(stderr, "Warning: %s\n", line);
 				break;
 			default:
-				std::cerr << line << std::endl;
+				fprintf(stdout, "%s\n", line);
 				break;
 		}
 	}
@@ -75,26 +76,8 @@ void LogRaw( LogLevel level, const char* message )
 	
 	if(i-last > 0)
 		LogRawLine(level, &message[last]);
-
 }
 
-
-/*
-std::ostream& Log()
-{
-	return NULL;
-}
-
-std::ostream& LogWarning()
-{
-	return NULL;
-}
-
-std::ostream& LogError()
-{
-	return NULL;
-}
-*/
 
 void Log( const char* format, ... )
 {

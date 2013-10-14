@@ -100,28 +100,14 @@ inline int Step( int value, int stepSize )
 }
 
 
-template< int TDimensions, class TComponent > class vec;
-
-/**
- * Access an multidimensional array
- * @tparam D how many dimensions do we have?
- * @param pos position in array
- * @param size size of the array
- */
-template< int D >
-int ArrayIndex( const vec<D,int>& pos, const vec<D,int>& size )
+inline int ArrayIndex( int x, int y, int width, int height )
 {
-	int index = 0;
-	for(int i = D-1; i >= 0; i--)
-	{
-		int j = pos[i];
-		for(int k = i-1; k >= 0; k--)
-		{
-			j *= size[k];
-		}
-		index += j;
-	}
-	return index;
+	return x + y*width;
+}
+
+inline int ArrayIndex( int x, int y, int z, int width, int height, int depth )
+{
+	return x + y*width + z*width*height;
 }
 
 

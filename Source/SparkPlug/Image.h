@@ -1,7 +1,6 @@
 #ifndef __SPARKPLUG_IMAGE__
 #define __SPARKPLUG_IMAGE__
 
-#include <SparkPlug/Vector.h>
 #include <SparkPlug/Pixel.h>
 
 namespace SparkPlug
@@ -11,7 +10,7 @@ class Image
 {
 public:
 	Image();
-	Image( PixelFormat format, vec3i size );
+	Image( PixelFormat format, int width, int height, int depth );
 	~Image();
 	
 	/**
@@ -19,24 +18,26 @@ public:
 	 * IMPORTANT: The pixel data is not memcopied,
 	 * its used directly as internal data pointer.
 	 */
-	void initFromRaw( PixelFormat format, vec3i size, void* pixels );
+	void initFromRaw( PixelFormat format, int width, int height, int depth, void* pixels );
 	
 	const PixelFormat& format() const;
 	
-	vec3i size() const;
+	int width() const;
+	int height() const;
+	int depth() const;
 	
 	void* pixels();
 	const void* pixels() const;
 	
-	void* pixelAt( vec3i pos );
-	const void* pixelAt( vec3i pos ) const;
+	void* pixelAt( int x, int y, int z );
+	const void* pixelAt( int x, int y, int z ) const;
 	
 private:
 	Image( const Image& source );
 	Image& operator = ( const Image& source );
 	
 	PixelFormat m_Format;
-	vec3i m_Size;
+	int m_Width, m_Height, m_Depth;
 	char* m_Data;
 };
 

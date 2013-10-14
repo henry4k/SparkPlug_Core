@@ -37,7 +37,7 @@ INSTALL(TARGETS sparkplug-core
 if(UNIX)
     SET(PKG_DEPS "")
     SET(PKG_LIBS "")
-    SET(LIB_NAME "sparkplug-core.${VERSION}")
+    SET(LIB_NAME "sparkplug-core")
 
     CONFIGURE_FILE(
         ${CMAKE_SOURCE_DIR}/sparkplug-core.pc.in

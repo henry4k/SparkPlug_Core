@@ -29,11 +29,10 @@
 namespace SparkPlug
 {
 
-int FastFloor( const float );
+int FastFloor( const float x ) { return x > 0 ? (int) x : (int) x - 1; }
 
-float Dot( const int*, const float, const float );
-float Dot( const int*, const float, const float, const float );
-float Dot( const int*, const float, const float, const float, const float );
+float Dot( const int* g, const float x, const float y ) { return g[0]*x + g[1]*y; }
+float Dot( const int* g, const float x, const float y, const float z ) { return g[0]*x + g[1]*y + g[2]*z; }
 
 
 // The gradients are the midpoints of the vertices of a cube.
@@ -107,7 +106,7 @@ static const int Simplex[64][4] = {
 //
 // For each octave, a higher frequency/lower amplitude function will be added to the original.
 // The higher the persistence [0-1], the more of each succeeding octave will be added.
-float SimplexNoise( const int octaves, const float persistence, const float scale, const vec2f pos )
+float SimplexNoise( const int octaves, const float persistence, const float scale, const float x, const float y )
 {
 	float total = 0;
 	float frequency = scale;
@@ -118,7 +117,7 @@ float SimplexNoise( const int octaves, const float persistence, const float scal
 	float maxAmplitude = 0;
 
 	for( int i=0; i < octaves; i++ ) {
-		total += SimplexRawNoise( pos * frequency ) * amplitude;
+		total += SimplexRawNoise( x*frequency, y*frequency ) * amplitude;
 
 		frequency *= 2;
 		maxAmplitude += amplitude;
@@ -133,7 +132,7 @@ float SimplexNoise( const int octaves, const float persistence, const float scal
 //
 // For each octave, a higher frequency/lower amplitude function will be added to the original.
 // The higher the persistence [0-1], the more of each succeeding octave will be added.
-float SimplexNoise( const int octaves, const float persistence, const float scale, const vec3f pos )
+float SimplexNoise( const int octaves, const float persistence, const float scale, const float x, const float y, const float z )
 {
 	float total = 0;
 	float frequency = scale;
@@ -144,7 +143,7 @@ float SimplexNoise( const int octaves, const float persistence, const float scal
 	float maxAmplitude = 0;
 
 	for( int i=0; i < octaves; i++ ) {
-		total += SimplexRawNoise( pos * frequency ) * amplitude;
+		total += SimplexRawNoise( x*frequency, y*frequency, z*frequency ) * amplitude;
 
 		frequency *= 2;
 		maxAmplitude += amplitude;
@@ -154,34 +153,10 @@ float SimplexNoise( const int octaves, const float persistence, const float scal
 	return total / maxAmplitude;
 }
 
-
-// 4D Multi-octave Simplex noise.
-//
-// For each octave, a higher frequency/lower amplitude function will be added to the original.
-// The higher the persistence [0-1], the more of each succeeding octave will be added.
-float SimplexNoise( const int octaves, const float persistence, const float scale, const vec4f pos ) {
-	float total = 0;
-	float frequency = scale;
-	float amplitude = 1;
-
-	// We have to keep track of the largest possible amplitude,
-	// because each octave adds more, and we need a value in [-1, 1].
-	float maxAmplitude = 0;
-
-	for( int i=0; i < octaves; i++ ) {
-		total += SimplexRawNoise( pos * frequency ) * amplitude;
-
-		frequency *= 2;
-		maxAmplitude += amplitude;
-		amplitude *= persistence;
-	}
-
-	return total / maxAmplitude;
-}
 
 
 // 2D raw Simplex noise
-float SimplexRawNoise( const vec2f pos )
+float SimplexRawNoise( const float x, const float y )
 {
 	// Noise contributions from the three corners
 	float n0, n1, n2;
@@ -189,9 +164,9 @@ float SimplexRawNoise( const vec2f pos )
 	// Skew the input space to determine which Simplex cell we're in
 	float F2 = 0.5 * (sqrtf(3.0) - 1.0);
 	// Hairy factor for 2D
-	float s = (pos.x + pos.y) * F2;
-	int i = FastFloor( pos.x + s );
-	int j = FastFloor( pos.y + s );
+	float s = (x + y) * F2;
+	int i = FastFloor( x + s );
+	int j = FastFloor( y + s );
 
 	float G2 = (3.0 - sqrtf(3.0)) / 6.0;
 	float t = (i + j) * G2;
@@ -199,8 +174,8 @@ float SimplexRawNoise( const vec2f pos )
 	float X0 = i-t;
 	float Y0 = j-t;
 	// The x,y distances from the cell origin
-	float x0 = pos.x-X0;
-	float y0 = pos.y-Y0;
+	float x0 = x-X0;
+	float y0 = y-Y0;
 
 	// For the 2D case, the Simplex shape is an equilateral triangle.
 	// Determine which Simplex we are in.
@@ -225,24 +200,36 @@ float SimplexRawNoise( const vec2f pos )
 
 	// Calculate the contribution from the three corners
 	float t0 = 0.5 - x0*x0-y0*y0;
-	if(t0<0) n0 = 0.0;
-	else {
-	t0 *= t0;
-	n0 = t0 * t0 * Dot(Grad3[gi0], x0, y0); // (x,y) of Grad3 used for 2D Gradient
+	if(t0<0)
+	{
+		n0 = 0.0;
+	}
+	else
+	{
+		t0 *= t0;
+		n0 = t0 * t0 * Dot(Grad3[gi0], x0, y0); // (x,y) of Grad3 used for 2D Gradient
 	}
 
 	float t1 = 0.5 - x1*x1-y1*y1;
-	if(t1<0) n1 = 0.0;
-	else {
-	t1 *= t1;
-	n1 = t1 * t1 * Dot(Grad3[gi1], x1, y1);
+	if(t1<0)
+	{
+		n1 = 0.0;
+	}
+	else
+	{
+		t1 *= t1;
+		n1 = t1 * t1 * Dot(Grad3[gi1], x1, y1);
 	}
 
 	float t2 = 0.5 - x2*x2-y2*y2;
-	if(t2<0) n2 = 0.0;
-	else {
-	t2 *= t2;
-	n2 = t2 * t2 * Dot(Grad3[gi2], x2, y2);
+	if(t2<0)
+	{
+		n2 = 0.0;
+	}
+	else
+	{
+		t2 *= t2;
+		n2 = t2 * t2 * Dot(Grad3[gi2], x2, y2);
 	}
 
 	// Add contributions from each corner to get the final noise value.
@@ -252,40 +239,59 @@ float SimplexRawNoise( const vec2f pos )
 
 
 // 3D raw Simplex noise
-float SimplexRawNoise( const vec3f pos ) {
+float SimplexRawNoise( const float x, const float y, const float z ) {
 	float n0, n1, n2, n3; // Noise contributions from the four corners
 
 	// Skew the input space to determine which Simplex cell we're in
 	float F3 = 1.0/3.0;
-	float s = (pos.x+pos.y+pos.z)*F3; // Very nice and simple skew factor for 3D
-	int i = FastFloor(pos.x+s);
-	int j = FastFloor(pos.y+s);
-	int k = FastFloor(pos.z+s);
+	float s = (x+y+z)*F3; // Very nice and simple skew factor for 3D
+	int i = FastFloor(x+s);
+	int j = FastFloor(y+s);
+	int k = FastFloor(z+s);
 
 	float G3 = 1.0/6.0; // Very nice and simple unskew factor, too
 	float t = (i+j+k)*G3;
 	float X0 = i-t; // Unskew the cell origin back to (x,y,z) space
 	float Y0 = j-t;
 	float Z0 = k-t;
-	float x0 = pos.x-X0; // The x,y,z distances from the cell origin
-	float y0 = pos.y-Y0;
-	float z0 = pos.z-Z0;
+	float x0 = x-X0; // The x,y,z distances from the cell origin
+	float y0 = y-Y0;
+	float z0 = z-Z0;
 
 	// For the 3D case, the Simplex shape is a slightly irregular tetrahedron.
 	// Determine which Simplex we are in.
 	int i1, j1, k1; // Offsets for second corner of Simplex in (i,j,k) coords
 	int i2, j2, k2; // Offsets for third corner of Simplex in (i,j,k) coords
 
-	if(x0>=y0) {
-	if(y0>=z0)
-	{ i1=1; j1=0; k1=0; i2=1; j2=1; k2=0; } // X Y Z order
-	else if(x0>=z0) { i1=1; j1=0; k1=0; i2=1; j2=0; k2=1; } // X Z Y order
-	else { i1=0; j1=0; k1=1; i2=1; j2=0; k2=1; } // Z X Y order
+	if(x0>=y0)
+	{
+		if(y0>=z0)
+		{
+			i1=1; j1=0; k1=0; i2=1; j2=1; k2=0; // X Y Z order 
+		}
+		else if(x0>=z0)
+		{
+			i1=1; j1=0; k1=0; i2=1; j2=0; k2=1; // X Z Y order
+		}
+		else
+		{
+			i1=0; j1=0; k1=1; i2=1; j2=0; k2=1; // Z X Y order
+		}
 	}
-	else { // x0<y0
-	if(y0<z0) { i1=0; j1=0; k1=1; i2=0; j2=1; k2=1; } // Z Y X order
-	else if(x0<z0) { i1=0; j1=1; k1=0; i2=0; j2=1; k2=1; } // Y Z X order
-	else { i1=0; j1=1; k1=0; i2=1; j2=1; k2=0; } // Y X Z order
+	else // x0<y0
+	{
+		if(y0<z0)
+		{
+			i1=0; j1=0; k1=1; i2=0; j2=1; k2=1; // Z Y X order
+		}
+		else if(x0<z0)
+		{
+			i1=0; j1=1; k1=0; i2=0; j2=1; k2=1; // Y Z X order
+		}
+		else
+		{
+			i1=0; j1=1; k1=0; i2=1; j2=1; k2=0; // Y X Z order
+		}
 	}
 
 	// A step of (1,0,0) in (i,j,k) means a step of (1-c,-c,-c) in (x,y,z),
@@ -313,178 +319,53 @@ float SimplexRawNoise( const vec3f pos ) {
 
 	// Calculate the contribution from the four corners
 	float t0 = 0.6 - x0*x0 - y0*y0 - z0*z0;
-	if(t0<0) n0 = 0.0;
-	else {
-	t0 *= t0;
-	n0 = t0 * t0 * Dot(Grad3[gi0], x0, y0, z0);
-	}
-
-	float t1 = 0.6 - x1*x1 - y1*y1 - z1*z1;
-	if(t1<0) n1 = 0.0;
-	else {
-	t1 *= t1;
-	n1 = t1 * t1 * Dot(Grad3[gi1], x1, y1, z1);
-	}
-
-	float t2 = 0.6 - x2*x2 - y2*y2 - z2*z2;
-	if(t2<0) n2 = 0.0;
-	else {
-	t2 *= t2;
-	n2 = t2 * t2 * Dot(Grad3[gi2], x2, y2, z2);
-	}
-
-	float t3 = 0.6 - x3*x3 - y3*y3 - z3*z3;
-	if(t3<0) n3 = 0.0;
-	else {
-	t3 *= t3;
-	n3 = t3 * t3 * Dot(Grad3[gi3], x3, y3, z3);
-	}
-
-	// Add contributions from each corner to get the final noise value.
-	// The result is scaled to stay just inside [-1,1]
-	return 32.0*(n0 + n1 + n2 + n3);
-}
-
-
-// 4D raw Simplex noise
-float SimplexRawNoise( const vec4f pos ) {
-	// The skewing and unskewing factors are hairy again for the 4D case
-	float F4 = (sqrtf(5.0)-1.0)/4.0;
-	float G4 = (5.0-sqrtf(5.0))/20.0;
-	float n0, n1, n2, n3, n4; // Noise contributions from the five corners
-
-	// Skew the (x,y,z,w) space to determine which cell of 24 simplices we're in
-	float s = (pos.x + pos.y + pos.z + pos.w) * F4; // Factor for 4D skewing
-	vec4i i = (pos + s).floor();
-	float t = i.sum() * G4; // Factor for 4D unskewing
-	vec4f Pos0 = i - t; // Unskew the cell origin back to (x,y,z,w) space
-	vec4f pos0 = pos - Pos0; // The x,y,z,w distances from the cell origin
-
-	// For the 4D case, the Simplex is a 4D shape I won't even try to describe.
-	// To find out which of the 24 possible simplices we're in, we need to
-	// determine the magnitude ordering of x0, y0, z0 and w0.
-	// The method below is a good way of finding the ordering of x,y,z,w and
-	// then find the correct traversal order for the Simplex we're in.
-	// First, six pair-wise comparisons are performed between each possible pair
-	// of the four coordinates, and the results are used to add up binary bits
-	// for an integer index.
-	int c1 = (pos0.x > pos0.y) ? 32 : 0;
-	int c2 = (pos0.x > pos0.z) ? 16 : 0;
-	int c3 = (pos0.y > pos0.z) ? 8 : 0;
-	int c4 = (pos0.x > pos0.w) ? 4 : 0;
-	int c5 = (pos0.y > pos0.w) ? 2 : 0;
-	int c6 = (pos0.z > pos0.w) ? 1 : 0;
-	int c = c1 + c2 + c3 + c4 + c5 + c6;
-
-	vec4i i1; // The integer offsets for the second Simplex corner
-	vec4i i2; // The integer offsets for the third Simplex corner
-	vec4i i3; // The integer offsets for the fourth Simplex corner
-
-	// Simplex[c] is a 4-vector with the numbers 0, 1, 2 and 3 in some order.
-	// Many values of c will never occur, since e.g. x>y>z>w makes x<z, y<w and x<w
-	// impossible. Only the 24 indices which have non-zero entries make any sense.
-	// We use a thresholding to set the coordinates in turn from the largest magnitude.
-	// The number 3 in the "Simplex" array is at the position of the largest coordinate.
-	i1.x = Simplex[c][0]>=3 ? 1 : 0;
-	i1.y = Simplex[c][1]>=3 ? 1 : 0;
-	i1.z = Simplex[c][2]>=3 ? 1 : 0;
-	i1.w = Simplex[c][3]>=3 ? 1 : 0;
-	// The number 2 in the "Simplex" array is at the second largest coordinate.
-	i2.x = Simplex[c][0]>=2 ? 1 : 0;
-	i2.y = Simplex[c][1]>=2 ? 1 : 0;
-	i2.z = Simplex[c][2]>=2 ? 1 : 0;
-	i2.w = Simplex[c][3]>=2 ? 1 : 0;
-	// The number 1 in the "Simplex" array is at the second smallest coordinate.
-	i3.x = Simplex[c][0]>=1 ? 1 : 0;
-	i3.y = Simplex[c][1]>=1 ? 1 : 0;
-	i3.z = Simplex[c][2]>=1 ? 1 : 0;
-	i3.w = Simplex[c][3]>=1 ? 1 : 0;
-	// The fifth corner has all coordinate offsets = 1, so no need to look that up.
-
-	vec4f pos1 = pos0 - i1 + G4; // Offsets for second corner in (x,y,z,w) coords
-	vec4f pos2 = pos0 - i2 + 2.0*G4; // Offsets for third corner in (x,y,z,w) coords
-	vec4f pos3 = pos0 - i3 + 3.0*G4; // Offsets for fourth corner in (x,y,z,w) coords
-	vec4f pos4 = pos0 - 1.0 + 4.0*G4; // Offsets for last corner in (x,y,z,w) coords
-
-	// Work out the hashed Gradient indices of the five Simplex corners
-	vec4i ii(
-		i.x & 255,
-		i.y & 255,
-		i.z & 255,
-		i.w & 255
-	);
-	int gi0 = perm[ii.x+     perm[ii.y+     perm[ii.z+     perm[ii.w     ]]]] % 32;
-	int gi1 = perm[ii.x+i1.x+perm[ii.y+i1.y+perm[ii.z+i1.z+perm[ii.w+i1.w]]]] % 32;
-	int gi2 = perm[ii.x+i2.x+perm[ii.y+i2.y+perm[ii.z+i2.z+perm[ii.w+i2.w]]]] % 32;
-	int gi3 = perm[ii.x+i3.x+perm[ii.y+i3.y+perm[ii.z+i3.z+perm[ii.w+i3.w]]]] % 32;
-	int gi4 = perm[ii.x+   1+perm[ii.y+   1+perm[ii.z+   1+perm[ii.w+   1]]]] % 32;
-
-	// Calculate the contribution from the five corners
-	float t0 = 0.6 - pos0.x*pos0.x - pos0.y*pos0.y - pos0.z*pos0.z - pos0.w*pos0.w;
-	if(t0 < 0)
+	if(t0<0)
 	{
 		n0 = 0.0;
 	}
 	else
 	{
 		t0 *= t0;
-		n0 = t0 * t0 * Dot(Grad4[gi0], pos0.x, pos0.y, pos0.z, pos0.w);
+		n0 = t0 * t0 * Dot(Grad3[gi0], x0, y0, z0);
 	}
 
-	float t1 = 0.6 - pos1.x*pos1.x - pos1.y*pos1.y - pos1.z*pos1.z - pos1.w*pos1.w;
-	if(t1 < 0)
+	float t1 = 0.6 - x1*x1 - y1*y1 - z1*z1;
+	if(t1<0)
 	{
 		n1 = 0.0;
 	}
 	else
 	{
 		t1 *= t1;
-		n1 = t1 * t1 * Dot(Grad4[gi1], pos1.x, pos1.y, pos1.z, pos1.w);
+		n1 = t1 * t1 * Dot(Grad3[gi1], x1, y1, z1);
 	}
-	
-	float t2 = 0.6 - pos2.x*pos2.x - pos2.y*pos2.y - pos2.z*pos2.z - pos2.w*pos2.w;
-	if(t2 < 0)
+
+	float t2 = 0.6 - x2*x2 - y2*y2 - z2*z2;
+	if(t2<0)
 	{
 		n2 = 0.0;
 	}
 	else
 	{
 		t2 *= t2;
-		n2 = t2 * t2 * Dot(Grad4[gi2], pos2.x, pos2.y, pos2.z, pos2.w);
+		n2 = t2 * t2 * Dot(Grad3[gi2], x2, y2, z2);
 	}
-	
-	float t3 = 0.6 - pos3.x*pos3.x - pos3.y*pos3.y - pos3.z*pos3.z - pos3.w*pos3.w;
-	if(t3 < 0)
+
+	float t3 = 0.6 - x3*x3 - y3*y3 - z3*z3;
+	if(t3<0)
 	{
 		n3 = 0.0;
 	}
 	else
 	{
 		t3 *= t3;
-		n3 = t3 * t3 * Dot(Grad4[gi3], pos3.x, pos3.y, pos3.z, pos3.w);
+		n3 = t3 * t3 * Dot(Grad3[gi3], x3, y3, z3);
 	}
 
-	float t4 = 0.6 - pos4.x*pos4.x - pos4.y*pos4.y - pos4.z*pos4.z - pos4.w*pos4.w;
-	if(t4 < 0)
-	{
-		n4 = 0.0;
-	}
-	else
-	{
-		t4 *= t4;
-		n4 = t4 * t4 * Dot(Grad4[gi4], pos4.x, pos4.y, pos4.z, pos4.w);
-	}
-
-	// Sum up and scale the result to cover the range [-1,1]
-	return 27.0 * (n0 + n1 + n2 + n3 + n4);
+	// Add contributions from each corner to get the final noise value.
+	// The result is scaled to stay just inside [-1,1]
+	return 32.0*(n0 + n1 + n2 + n3);
 }
-
-
-int FastFloor( const float x ) { return x > 0 ? (int) x : (int) x - 1; }
-
-float Dot( const int* g, const float x, const float y ) { return g[0]*x + g[1]*y; }
-float Dot( const int* g, const float x, const float y, const float z ) { return g[0]*x + g[1]*y + g[2]*z; }
-float Dot( const int* g, const float x, const float y, const float z, const float w ) { return g[0]*x + g[1]*y + g[2]*z + g[3]*w; }
 
 
 }

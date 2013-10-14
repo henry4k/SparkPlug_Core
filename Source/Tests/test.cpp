@@ -1,17 +1,6 @@
 #define CATCH_CONFIG_MAIN
 #include <catch.hpp>
 
-#include <SparkPlug/Vector.h>
-TEST_CASE("Math/Vector", "Wuff")
-{
-	using namespace SparkPlug;
-
-	vec3f a(1,2,3);
-	vec3f b = a;
-
-	CHECK( a == b );
-}
-
 #include <SparkPlug/Math.h>
 TEST_CASE("Math/PowerOfTwo", "Wuff")
 {

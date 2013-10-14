@@ -2,7 +2,6 @@
 #define __SPARKPLUG_INTERPOLATION__
 
 #include <SparkPlug/Math.h>
-#include <SparkPlug/Vector.h>
 
 namespace SparkPlug
 {
@@ -44,6 +43,7 @@ class Mix
 		}
 		
 		/// Interpolates 4 values
+		/*
 		static TValue Mix2D( const TValue* values, const vec<2,TFactor>& factor, MixFn mixX = Linear, MixFn mixY = 0 )
 		{
 			if(!mixY)
@@ -57,6 +57,7 @@ class Mix
 			TValue b = mixX(values[2], values[3], factor.x);
 			return mixY(a, b, factor.y);
 		}
+		*/
 };
 
 /** http://www.iquilezles.org/www/articles/functions/functions.htm
